@@ -20,7 +20,9 @@ def _clean_env(private_root: Path) -> dict:
     """Environment for the frontier subprocess: strip anything pointing at the
     private tree, and make sure HARNESS_MODE is stub."""
     env = {k: v for k, v in os.environ.items()
-           if str(private_root) not in v and k not in ("PYTHONPATH",)}
+           if str(private_root) not in v and k not in ("PYTHONPATH",)
+           # a Claude Code parent marks its env; the child must start clean
+           and k != "CLAUDECODE" and not k.startswith("CLAUDE_CODE_")}
     env["HARNESS_MODE"] = "stub"
     return env
 
