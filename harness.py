@@ -30,6 +30,7 @@ import detector  # noqa: E402
 import frontier  # noqa: E402
 import gate  # noqa: E402
 import localmodel  # noqa: E402
+import routing  # noqa: E402
 import stubgen  # noqa: E402
 from contract import Contract, ContractError  # noqa: E402
 
@@ -71,11 +72,11 @@ def partition(cfg: dict, user_prompt: str, denylist, priv: Path) -> Contract:
     if det_on and det.get("probe_raw_prompt", False):
         spans = detector.spans_from_prompt(user_prompt)
         log(f"pre-scoring {len(spans)} raw prompt span(s) with detector (leaves the box)")
-        verdicts = detector.score_spans(det, spans, det["policy"], terms)
+        verdicts = detector.score_spans(det, spans, terms)
         (priv / "leakmap.json").write_text(json.dumps([v.__dict__ for v in verdicts], indent=2))
         lm = detector.leak_map(verdicts)
         log(f"leak map: {sum(v.flagged for v in verdicts)}/{len(verdicts)} span(s) PRIVATE")
-    system = prompt_text("partition.md", leak_map=lm,
+    system = prompt_text("partition.md", leak_map=lm, policy=routing.POLICY.strip(),
                          denylist="\n".join(f"- {t}" for t in terms) or "- (none)")
     messages = [{"role": "system", "content": system},
                 {"role": "user", "content": user_prompt}]
@@ -97,7 +98,7 @@ def partition(cfg: dict, user_prompt: str, denylist, priv: Path) -> Contract:
                 else:
                     spans = [(f"probe[{n}]", str(t)) for n, t in enumerate(data["probes"])]
                     log(f"probe round {probes}/{max_probes}: scoring {len(spans)} span(s)")
-                    vs = detector.score_spans(det, spans, det["policy"], terms)
+                    vs = detector.score_spans(det, spans, terms)
                     (priv / f"probe.round{probes}.json").write_text(json.dumps([v.__dict__ for v in vs], indent=2))
                     answer = "PROBE RESULTS:\n" + detector.leak_map(vs) + "\n\nNow reply with the contract."
                 messages += [{"role": "assistant", "content": reply},
@@ -120,7 +121,7 @@ def partition(cfg: dict, user_prompt: str, denylist, priv: Path) -> Contract:
         if det_on:
             spans = detector.spans_from_public_view(c.public_view())
             log(f"detector scoring {len(spans)} public span(s)")
-            verdicts = detector.score_spans(det, spans, det["policy"], terms)
+            verdicts = detector.score_spans(det, spans, terms)
             (priv / f"detector.attempt{attempt}.json").write_text(
                 json.dumps([v.__dict__ for v in verdicts], indent=2))
             log(detector.describe(verdicts))
@@ -270,7 +271,9 @@ def main() -> None:
         if hits:
             raise SystemExit(gate.describe(hits))
         (public / ".harness_frontier_prompt.md").write_text(fp)
-        log(f"frontier build starting ({cfg['frontier']['backend']}) in {public}")
+        backend = routing.pick_frontier(c.public_view(), cfg["frontier"]["backend"])
+        cfg["frontier"]["backend"] = backend
+        log(f"frontier build starting ({backend}, chosen by routing.pick_frontier) in {public}")
         frontier.run(cfg["frontier"], fp, public, cfg["paths"]["private_root"], priv / "frontier.log")
         ok, out = run_tests(public, "stub", None)
         (priv / "tests.stub.txt").write_text(out)

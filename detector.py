@@ -22,6 +22,8 @@ import urllib.request
 import urllib.error
 from dataclasses import dataclass
 
+import routing
+
 
 class DetectorError(RuntimeError):
     pass
@@ -51,19 +53,16 @@ def spans_from_public_view(pv: dict) -> list[tuple[str, str]]:
     return out
 
 
-def _question(policy: str, denylist_terms: list[str]) -> dict:
+def _question(denylist_terms: list[str]) -> dict:
     terms = ", ".join(denylist_terms) if denylist_terms else "(none listed)"
     return {
         "type": "noul",
         "instructions": ("Does this text reveal information that the confidentiality policy "
                          "says must not be sent to a third-party coding agent?"),
         "criteria": {
-            "true": ("The text contains or lets a reader infer protected material: " + policy
-                     + " Denylisted terms or obvious variants of them: " + terms + "."),
-            "false": ("The text is generic engineering content: product behaviour described "
-                      "at interface level, synthetic example values, ordinary CLI/data "
-                      "plumbing, public technology names. Nothing proprietary can be "
-                      "recovered from it."),
+            "true": (routing.POLICY.strip() + "\nDenylisted terms or obvious variants of them: "
+                     + terms + "."),
+            "false": routing.PUBLIC_OK.strip(),
         },
     }
 
@@ -87,13 +86,14 @@ def _call(cfg: dict, state: str, questions: dict) -> dict:
         raise DetectorError(f"detector unreachable: {e}") from e
 
 
-def score_spans(cfg: dict, spans: list[tuple[str, str]], policy: str,
+def score_spans(cfg: dict, spans: list[tuple[str, str]],
                 denylist_terms: list[str]) -> list[SpanVerdict]:
-    threshold = float(cfg.get("threshold", 0.5))
+    """Score each span with Jev, then let routing.classify() make the call."""
     if cfg.get("base_url") == "fake":
         from fakes import fake_detector
-        return [SpanVerdict(l, t, p, p >= threshold) for (l, t), p in zip(spans, fake_detector(spans))]
-    q = _question(policy, denylist_terms)
+        return [SpanVerdict(l, t, p, routing.classify(l, t, p))
+                for (l, t), p in zip(spans, fake_detector(spans))]
+    q = _question(denylist_terms)
     out: list[SpanVerdict] = []
     for label, text in spans:
         resp = _call(cfg, text, {"leak": q})
@@ -101,7 +101,7 @@ def score_spans(cfg: dict, spans: list[tuple[str, str]], policy: str,
             p = float(resp["answers"]["leak"]["noul"])
         except (KeyError, TypeError, ValueError) as e:
             raise DetectorError(f"unexpected detector response: {json.dumps(resp)[:500]}") from e
-        out.append(SpanVerdict(label, text, p, p >= threshold))
+        out.append(SpanVerdict(label, text, p, routing.classify(label, text, p)))
     return out
 
 
@@ -115,20 +115,9 @@ def describe(verdicts: list[SpanVerdict], only_flagged: bool = True) -> str:
     return "\n".join(lines)
 
 
-def spans_from_prompt(prompt: str, max_len: int = 400) -> list[tuple[str, str]]:
-    """Split a raw prompt into paragraphs, then sentences for long paragraphs.
-    Only used when [detector].probe_raw_prompt is on: these spans go to
-    OpenRouter/TypeSafe."""
-    out: list[tuple[str, str]] = []
-    paras = [p.strip() for p in re.split(r"\n\s*\n", prompt) if p.strip()]
-    for n, p in enumerate(paras):
-        if len(p) <= max_len:
-            out.append((f"prompt[{n}]", p))
-            continue
-        for k, s in enumerate(re.split(r"(?<=[.!?])\s+", p)):
-            if s.strip():
-                out.append((f"prompt[{n}.{k}]", s.strip()))
-    return out
+def spans_from_prompt(prompt: str) -> list[tuple[str, str]]:
+    """Delegates to routing.split_prompt(). Only used when probe_raw_prompt is on."""
+    return routing.split_prompt(prompt)
 
 
 def leak_map(verdicts: list[SpanVerdict]) -> str:

@@ -3,7 +3,9 @@ sees the user's full request. A third-party coding agent (a
 frontier model behind a commercial API) will build most of the system. Your
 job is to split the work.
 
-THE PARTITION RULE IS CONFIDENTIALITY, NOTHING ELSE.
+THE PARTITION RULE IS CONFIDENTIALITY, NOTHING ELSE. The policy:
+{policy}
+
 Anything proprietary, confidential, customer-identifying, secret, internal, or
 export-controlled stays on the private side and is implemented by you. Everything
 else goes to the frontier agent. Do not hide ordinary engineering from the

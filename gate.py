@@ -2,7 +2,7 @@
 
 The local model does the semantic partition; this gate is the hard backstop.
 It scans outbound text against:
-  * built-in secret patterns (keys, tokens, private-key blocks)
+  * HARD_RULES from routing.py (keys, tokens, private-key blocks, ...)
   * a user denylist (literal strings, or `re:<regex>` lines) kept in the
     private root, because the denylist itself names proprietary things.
 Any hit blocks the send.
@@ -13,15 +13,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-BUILTIN = [
-    ("aws access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
-    ("openai/anthropic style key", re.compile(r"\bsk-(?:ant-)?[A-Za-z0-9_\-]{20,}\b")),
-    ("github token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{30,}\b")),
-    ("slack token", re.compile(r"\bxox[abpr]-[A-Za-z0-9\-]{10,}\b")),
-    ("private key block", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
-    ("bearer header", re.compile(r"(?i)\bauthorization:\s*bearer\s+\S+")),
-    ("connection string", re.compile(r"\b(?:postgres|mysql|mongodb(?:\+srv)?|redis)://[^\s'\"]+")),
-]
+from routing import HARD_RULES as BUILTIN  # edit routing.py, not this file
 
 DENYLIST_TEMPLATE = """# Redaction denylist. One entry per line. Lines starting with # are ignored.
 # Plain lines are case-insensitive literal matches.

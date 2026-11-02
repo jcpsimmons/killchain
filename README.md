@@ -22,6 +22,24 @@ prompt ─► orchestrator ─► contract.json  (brief + interfaces + decoy fix
                                                                              (HARNESS_MODE=real: tests prove the fit)
 ```
 
+## Where to edit the routing
+
+**[routing.py](routing.py)** is the one file that decides what stays private
+and what goes out. Everything else is plumbing that imports from it:
+
+| In routing.py     | What it controls                                                      |
+|-------------------|-----------------------------------------------------------------------|
+| `POLICY`          | what counts as private; shown to the orchestrator and used as Jev's "leaks" criteria |
+| `PUBLIC_OK`       | what is fine to send; Jev's "fine" criteria                           |
+| `HARD_RULES`      | regexes that block a send outright, no model involved                 |
+| `THRESHOLDS`      | Jev leak probability needed to flag, per span kind (fixtures get a higher bar) |
+| `classify()`      | the final per-span private/public decision                            |
+| `pick_frontier()` | which coding agent builds the public half, by content if you like     |
+| `split_prompt()`  | how the raw prompt is cut into spans for the leak map                 |
+
+The denylist (`denylist.txt` in the private root) adds literal and regex
+rules on top of `HARD_RULES` without touching the repo.
+
 ## Trust boundaries
 
 To the **orchestrator (refuseless)**: the full prompt, the contract, and the
@@ -51,8 +69,9 @@ the things you are protecting. First run writes a template.
 2. **Regex gate** (deterministic): denylist literals and regexes plus built-in
    secret patterns. Any hit blocks the send.
 3. **Jev detector** (probabilistic): `typesafe/jev-1.14` via the OpenRouter
-   Decisions API, one `noul` question per span against the policy text in
-   `config.toml`. Spans at or above `threshold` block the send. Live check on
+   Decisions API, one `noul` question per span with `POLICY` and `PUBLIC_OK`
+   from routing.py as the criteria. `routing.classify()` turns the probability
+   into a decision using per-kind `THRESHOLDS`. Live check on
    this machine: benign interface description 0.10, a span naming a codename,
    weights and a customer 0.98, a synthetic fixture 0.46.
 4. **Human review**: the full outbound view is printed and you confirm, unless
@@ -101,8 +120,9 @@ cd workspace/<run>/public && HARNESS_MODE=real PYTHONPATH=~/skoal-private/<run> 
 `config.toml`: `[orchestrator]` is any OpenAI-compatible chat endpoint;
 default is refuseless with the key read from `$REFUSELESS_API_KEY` or from
 `~/.hermes/.env` at runtime (never stored in the repo). `[frontier]` picks
-`claude` or `codex` and their flags. `[detector]` holds the Jev model,
-threshold and policy text and needs `OPENROUTER_API_KEY`.
+`claude` or `codex` and their flags (overridable per run by
+`routing.pick_frontier`). `[detector]` holds the Jev endpoint and model and
+needs `OPENROUTER_API_KEY`; the policy and thresholds are in routing.py.
 
 ## Contract shape
 
