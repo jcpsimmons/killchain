@@ -1,10 +1,14 @@
 # Harness configuration. Paths may use ~.
 
-[local]
-# OpenAI-compatible chat endpoint of the on-box model (llama.cpp, vLLM, Ollama, LM Studio...).
-base_url = "http://localhost:8000/v1"
-model = "abliterated"
-api_key = "none"
+[orchestrator]
+# The abliterated orchestrator model: the only model that sees the full prompt.
+# Any OpenAI-compatible chat endpoint. Default: refuseless, settings mirrored
+# from ~/.hermes/config.yaml. The key is read from $REFUSELESS_API_KEY, or
+# from env_file if that is unset. It is never written to this repo.
+base_url = "https://api.refuseless.com/v1"
+model = "deepseek-v4.1-flash-abliterated"   # also: glm-5.3-abliterated, glm-5.3-flash-abliterated
+api_key_env = "REFUSELESS_API_KEY"
+env_file = "~/.hermes/.env"
 timeout = 900
 max_partition_tries = 4
 max_impl_tries = 4
@@ -39,4 +43,4 @@ business metrics, pricing or contract terms."""
 
 [paths]
 workspace = "./workspace"          # public builds live here, one dir per run
-private_root = "~/harness-private"  # prompts, contracts, private impls, denylist
+private_root = "~/skoal-private"    # prompts, contracts, private impls, denylist

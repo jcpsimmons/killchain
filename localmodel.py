@@ -1,18 +1,34 @@
-"""Client for the local (on-box) model via an OpenAI-compatible chat endpoint.
+"""Client for the orchestrator (abliterated) model via an OpenAI-compatible
+chat endpoint: refuseless by default, or llama.cpp / vLLM / Ollama / LM Studio
+for an on-box model. Stdlib only. `base_url = "fake"` selects a canned backend.
 
-llama.cpp server, vLLM, Ollama, LM Studio and TabbyAPI all speak this.
-Stdlib only. `base_url = "fake"` selects a canned backend for pipeline tests.
+The API key comes from the env var named by `api_key_env`, else from the
+dotenv-style file at `env_file` (default: the Hermes .env). Never stored here.
 """
 from __future__ import annotations
 
 import json
+import os
 import re
+from pathlib import Path
 import urllib.request
 import urllib.error
 
 
 class LocalModelError(RuntimeError):
     pass
+
+
+def api_key(cfg: dict) -> str:
+    name = cfg.get("api_key_env", "")
+    if name and os.environ.get(name):
+        return os.environ[name]
+    env_file = Path(cfg.get("env_file", "~/.hermes/.env")).expanduser()
+    if name and env_file.exists():
+        for line in env_file.read_text().splitlines():
+            if line.startswith(name + "="):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return cfg.get("api_key", "none")
 
 
 def chat(cfg: dict, messages: list[dict], temperature: float = 0.2,
@@ -30,7 +46,7 @@ def chat(cfg: dict, messages: list[dict], temperature: float = 0.2,
     req = urllib.request.Request(
         url, data=json.dumps(body).encode(),
         headers={"Content-Type": "application/json",
-                 "Authorization": f"Bearer {cfg.get('api_key', 'none')}"})
+                 "Authorization": f"Bearer {api_key(cfg)}"})
     try:
         with urllib.request.urlopen(req, timeout=cfg.get("timeout", 600)) as r:
             data = json.loads(r.read())

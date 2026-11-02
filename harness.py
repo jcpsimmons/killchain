@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Contract-first split build.
 
-    prompt --> LOCAL model (sees everything) --> Contract
+    prompt --> ORCHESTRATOR model (abliterated; sees everything) --> Contract
            --> regex gate + Jev detector on the PUBLIC VIEW only
            --> stubs + contract tests generated into public/
            --> FRONTIER agent (Claude Code / Codex) builds public half vs stubs
-           --> LOCAL model implements private_impl/ to the contract
+           --> ORCHESTRATOR model implements private_impl/ to the contract
            --> contract tests in real mode prove the halves plug together
 
 Only the public view (brief + interfaces + synthetic fixtures) ever leaves the
@@ -42,8 +42,8 @@ def load_cfg(path: Path, overrides: argparse.Namespace) -> dict:
     cfg = tomllib.loads(path.read_text())
     if overrides.frontier:
         cfg["frontier"]["backend"] = overrides.frontier
-    if overrides.local_url:
-        cfg["local"]["base_url"] = overrides.local_url
+    if overrides.orch_url:
+        cfg["orchestrator"]["base_url"] = overrides.orch_url
     if overrides.no_detector:
         cfg["detector"]["enabled"] = False
     if overrides.detector_url:
@@ -79,13 +79,13 @@ def partition(cfg: dict, user_prompt: str, denylist, priv: Path) -> Contract:
                          denylist="\n".join(f"- {t}" for t in terms) or "- (none)")
     messages = [{"role": "system", "content": system},
                 {"role": "user", "content": user_prompt}]
-    tries = int(cfg["local"].get("max_partition_tries", 4))
+    tries = int(cfg["orchestrator"].get("max_partition_tries", 4))
     max_probes = int(det.get("max_probe_rounds", 3))
     attempt = probes = 0
     while attempt < tries:
         attempt += 1
-        log(f"partition attempt {attempt}/{tries} (local model)")
-        reply = localmodel.chat(cfg["local"], messages)
+        log(f"partition attempt {attempt}/{tries} (orchestrator)")
+        reply = localmodel.chat(cfg["orchestrator"], messages)
         (priv / f"partition.attempt{attempt}.txt").write_text(reply)
         try:
             data = localmodel.extract_json(reply)
@@ -129,25 +129,33 @@ def partition(cfg: dict, user_prompt: str, denylist, priv: Path) -> Contract:
         if not problems:
             return c
         feedback = "\n\n".join(problems)
-        log("public view rejected; feeding back to local model")
+        log("public view rejected; feeding back to orchestrator")
         messages += [{"role": "assistant", "content": reply},
                      {"role": "user", "content":
                       "PREVIOUS ATTEMPT REJECTED. The public view below would leak. "
                       "Move the flagged material into private_notes, rephrase the public "
                       "brief at interface level, replace any real values in fixtures with "
                       "synthetic ones, and return the full corrected JSON object.\n\n" + feedback}]
-    raise SystemExit("partition failed: local model could not produce a clean public view")
+    raise SystemExit("partition failed: orchestrator could not produce a clean public view")
 
 
 # ---------------------------------------------------------------- helpers
-def run_tests(public: Path, mode: str, private: Path | None) -> tuple[bool, str]:
+def run_tests(public: Path, mode: str, private: Path | None,
+              contracts_only: bool = False) -> tuple[bool, str]:
+    """contracts_only runs just the generated conformance tests: that is the
+    orchestrator's responsibility. The full suite also covers the frontier's
+    own tests, which can fail for reasons the private side cannot fix."""
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     env["HARNESS_MODE"] = mode
     if mode == "real":
         assert private is not None
         env["PYTHONPATH"] = str(private)
-    p = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "."],
-                       cwd=public, env=env, capture_output=True, text=True, timeout=900)
+        env["HARNESS_FIXTURES"] = str(private / "private_fixtures.json")
+    if contracts_only:
+        cmd = [sys.executable, "-m", "unittest", "tests.test_contracts"]
+    else:
+        cmd = [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-t", "."]
+    p = subprocess.run(cmd, cwd=public, env=env, capture_output=True, text=True, timeout=900)
     return p.returncode == 0, (p.stdout + p.stderr)
 
 
@@ -170,13 +178,13 @@ def confirm(pv: dict, yes: bool) -> None:
 
 # ---------------------------------------------------------------- step 3
 def implement_private(cfg: dict, user_prompt: str, c: Contract, public: Path, priv: Path) -> bool:
-    tries = int(cfg["local"].get("max_impl_tries", 4))
+    tries = int(cfg["orchestrator"].get("max_impl_tries", 4))
     feedback = ""
     for attempt in range(1, tries + 1):
-        log(f"private implementation attempt {attempt}/{tries} (local model)")
+        log(f"private implementation attempt {attempt}/{tries} (orchestrator)")
         user = prompt_text("local_implement.md", prompt=user_prompt,
                            contract=json.dumps(c.to_dict(), indent=2), feedback=feedback)
-        reply = localmodel.chat(cfg["local"], [{"role": "user", "content": user}], max_tokens=16384)
+        reply = localmodel.chat(cfg["orchestrator"], [{"role": "user", "content": user}], max_tokens=16384)
         (priv / f"implement.attempt{attempt}.txt").write_text(reply)
         try:
             data = localmodel.extract_json(reply)
@@ -186,17 +194,21 @@ def implement_private(cfg: dict, user_prompt: str, c: Contract, public: Path, pr
             continue
         for rel, src in files.items():
             if not rel.startswith("private_impl/") or ".." in rel:
-                raise SystemExit(f"local model tried to write outside private_impl/: {rel}")
+                raise SystemExit(f"orchestrator tried to write outside private_impl/: {rel}")
             dest = priv / rel
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(src)
         (priv / "private_impl" / "__init__.py").touch()
-        ok, out = run_tests(public, "real", priv)
+        ok, out = run_tests(public, "real", priv, contracts_only=True)
         (priv / f"tests.real.attempt{attempt}.txt").write_text(out)
         if ok:
-            log("real-mode tests PASS: private implementation honours the contract")
+            log("contract tests PASS in real mode: private implementation honours the contract")
+            full_ok, full_out = run_tests(public, "real", priv)
+            (priv / "tests.real.full.txt").write_text(full_out)
+            log("full suite in real mode: " + ("PASS" if full_ok else
+                "FAIL (frontier-side tests; see tests.real.full.txt)"))
             return True
-        log("real-mode tests FAIL; feeding failures back to local model")
+        log("contract tests FAIL in real mode; feeding failures back to orchestrator")
         feedback = ("\n\nPREVIOUS ATTEMPT REJECTED. The contract tests failed against your "
                     "implementation. Fix it and return the full JSON object again.\n\n"
                     "Test output:\n" + out[-6000:])
@@ -211,7 +223,7 @@ def main() -> None:
     ap.add_argument("-c", "--config", default=str(HERE / "config.toml"))
     ap.add_argument("--run-id", help="reuse/continue a run directory")
     ap.add_argument("--frontier", choices=["claude", "codex", "fake"])
-    ap.add_argument("--local-url", help="override local model base_url ('fake' for canned)")
+    ap.add_argument("--orch-url", help="override orchestrator base_url ('fake' for canned)")
     ap.add_argument("--detector-url", help="override detector base_url ('fake' for canned)")
     ap.add_argument("--no-detector", action="store_true")
     ap.add_argument("--private-root"); ap.add_argument("--workspace")
@@ -245,7 +257,8 @@ def main() -> None:
         contract_path.write_text(json.dumps(c.to_dict(), indent=2))
         (public / "contract.public.json").write_text(json.dumps(c.public_view(), indent=2))
         written = stubgen.generate(c, public)
-        log(f"generated {len(written)} stub/test files in public/")
+        stubgen.write_private_fixtures(c, priv / "private_fixtures.json")
+        log(f"generated {len(written)} stub/test files in public/; private fixtures kept in private/")
         ok, out = run_tests(public, "stub", None)
         if not ok:
             raise SystemExit("generated contract tests fail in stub mode (harness bug):\n" + out)

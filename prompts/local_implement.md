@@ -1,8 +1,9 @@
-You are implementing the private half of a system on the local machine. The
+You are implementing the private half of a system. The
 public half has already been built by a third party against the interfaces in
-the contract below. Your code must satisfy those interfaces exactly, including
-the fixtures: in real mode the contract tests call your functions with each
-fixture's inputs and compare to its output.
+the contract below. Your code must satisfy those interfaces exactly. The
+conformance tests call your functions with each `private_fixtures` entry's
+inputs and compare to its output; the public `fixtures` are decoys and must
+NOT be reproduced.
 
 Write one Python module per contract module at `private_impl/<module>.py`,
 exposing each function with the exact name and keyword parameters. Stdlib
@@ -19,7 +20,7 @@ Reply with ONE JSON object, no prose:
   "notes": "anything the operator should know"
 }}
 
-Original user request (confidential, local only):
+Original user request (confidential, private side only):
 {prompt}
 
 Full contract (including private_notes and private_plan):

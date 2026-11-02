@@ -29,9 +29,15 @@ CONTRACT = {
         "returns": "float",
         "fixtures": [
             {"inputs": {"lead": {"company_size": 50, "industry": "saas", "visits": 12}},
-             "output": 0.74, "note": "synthetic"},
+             "output": 0.42, "note": "decoy"},
             {"inputs": {"lead": {"company_size": 10, "industry": "retail", "visits": 0}},
-             "output": 0.1, "note": "synthetic"},
+             "output": 0.08, "note": "decoy"},
+        ],
+        "private_fixtures": [
+            {"inputs": {"lead": {"company_size": 50, "industry": "saas", "visits": 12}},
+             "output": 0.74, "note": "real"},
+            {"inputs": {"lead": {"company_size": 10, "industry": "retail", "visits": 0}},
+             "output": 0.1, "note": "real"},
         ],
     }],
     "private_notes": "Real formula: 0.01*company_size + 0.02*visits, capped at 1.0, rounded to 4dp.",
@@ -74,7 +80,22 @@ def fake_detector(spans: list[tuple[str, str]]) -> list[float]:
     return [0.97 if "FLAGME" in t else 0.03 for _, t in spans]
 
 
+def _contract_matches_canned(public_dir: Path) -> bool:
+    try:
+        pv = json.loads((public_dir / "contract.public.json").read_text())
+        i = pv["interfaces"][0]
+        return (len(pv["interfaces"]) == 1 and i["module"] == "scoring"
+                and i["function"] == "score_lead" and [p["name"] for p in i["params"]] == ["lead"])
+    except (OSError, KeyError, IndexError, ValueError):
+        return False
+
+
 def fake_frontier(prompt: str, public_dir: Path) -> str:
+    if not _contract_matches_canned(public_dir):
+        (public_dir / "NOTES.md").write_text(
+            "# fake frontier\n\nContract does not match the canned toy signature "
+            "(scoring.score_lead(lead)); wrote no app. Use a real frontier backend.\n")
+        return "fake frontier: contract differs from canned toy; wrote NOTES.md only"
     app = public_dir / "app"
     app.mkdir(exist_ok=True)
     (app / "__init__.py").write_text("")

@@ -40,7 +40,8 @@ class Interface:
     description: str
     params: list[Param]
     returns: str
-    fixtures: list[Fixture]
+    fixtures: list[Fixture]                                  # PUBLIC decoys: shape only
+    private_fixtures: list[Fixture] = field(default_factory=list)  # real behaviour, never leaves
 
 
 @dataclass
@@ -58,11 +59,12 @@ class Contract:
             for i in d.get("interfaces", []):
                 params = [Param(**p) for p in i.get("params", [])]
                 fixtures = [Fixture(**f) for f in i.get("fixtures", [])]
+                pfix = [Fixture(**f) for f in i.get("private_fixtures", [])]
                 ifaces.append(Interface(
                     module=i["module"], function=i["function"],
                     description=i.get("description", ""),
                     params=params, returns=i.get("returns", "Any"),
-                    fixtures=fixtures,
+                    fixtures=fixtures, private_fixtures=pfix,
                 ))
             return Contract(
                 public_brief=d["public_brief"], interfaces=ifaces,
@@ -93,31 +95,51 @@ class Contract:
                 raise ContractError(f"duplicate interface {i.module}.{i.function}")
             seen.add(key)
             if not i.fixtures:
-                raise ContractError(f"{i.module}.{i.function} has no fixtures; "
-                                    "every interface needs at least one synthetic example")
+                raise ContractError(f"{i.module}.{i.function} has no public fixtures; "
+                                    "every interface needs at least one synthetic decoy example")
+            if not i.private_fixtures:
+                raise ContractError(f"{i.module}.{i.function} has no private_fixtures; "
+                                    "every interface needs at least one real example for conformance")
             pnames = {p.name for p in i.params}
             for p in i.params:
                 if not IDENT.match(p.name):
                     raise ContractError(f"bad param name {p.name!r} in {i.function}")
+            for kind, fixtures in (("fixture", i.fixtures), ("private_fixture", i.private_fixtures)):
+                for n, f in enumerate(fixtures):
+                    extra = set(f.inputs) - pnames
+                    missing = pnames - set(f.inputs)
+                    if extra or missing:
+                        raise ContractError(
+                            f"{kind} {n} of {i.module}.{i.function} inputs mismatch params: "
+                            f"extra={sorted(extra)} missing={sorted(missing)}")
+                    try:
+                        json.dumps(f.inputs); json.dumps(f.output)
+                    except TypeError as e:
+                        raise ContractError(f"{kind} {n} of {i.function} not JSON: {e}")
+            real = {json.dumps([f.inputs, f.output], sort_keys=True) for f in i.private_fixtures}
             for n, f in enumerate(i.fixtures):
-                extra = set(f.inputs) - pnames
-                missing = pnames - set(f.inputs)
-                if extra or missing:
+                if json.dumps([f.inputs, f.output], sort_keys=True) in real:
                     raise ContractError(
-                        f"fixture {n} of {i.module}.{i.function} inputs mismatch params: "
-                        f"extra={sorted(extra)} missing={sorted(missing)}")
-                try:
-                    json.dumps(f.inputs); json.dumps(f.output)
-                except TypeError as e:
-                    raise ContractError(f"fixture {n} of {i.function} not JSON: {e}")
+                        f"public fixture {n} of {i.module}.{i.function} equals a private fixture; "
+                        "public fixtures must be decoys, not real behaviour")
 
     # ---- views --------------------------------------------------------
     def public_view(self) -> dict:
-        """Everything the frontier model is allowed to see."""
-        return {
-            "public_brief": self.public_brief,
-            "interfaces": [asdict(i) for i in self.interfaces],
-        }
+        """Everything the frontier model is allowed to see. private_fixtures excluded."""
+        ifaces = []
+        for i in self.interfaces:
+            d = asdict(i)
+            d.pop("private_fixtures", None)
+            ifaces.append(d)
+        return {"public_brief": self.public_brief, "interfaces": ifaces}
+
+    def private_fixtures_dict(self) -> dict:
+        """{module: {function: [{inputs, output}]}} from the REAL examples."""
+        out: dict = {}
+        for i in self.interfaces:
+            out.setdefault(i.module, {})[i.function] = [
+                {"inputs": f.inputs, "output": f.output} for f in i.private_fixtures]
+        return out
 
     def to_dict(self) -> dict:
         return asdict(self)
