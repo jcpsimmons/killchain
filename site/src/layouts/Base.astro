@@ -7,8 +7,8 @@ interface Props {
 }
 
 const {
-  title = 'killchain — refusal-first split build',
-  description = 'Split a build so a frontier coding agent never sees the risky half. One prompt in, two halves out: a public half built by Claude Code or Codex against stubs, and a private half implemented by an abliterated orchestrator. Joined by a contract.',
+  title = 'killchain: refusal-first split build',
+  description = 'killchain is a Python 3.11+, zero-dependency, MIT, two-model, contract-joined build harness. The frontier agent builds what it would not refuse. An abliterated model builds the rest.',
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
