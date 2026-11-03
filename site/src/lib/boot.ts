@@ -174,6 +174,8 @@ export function seek(shotId: string, root?: HTMLElement | null): void {
   delete el.dataset.boot;
   cut(el, shotId);
   el.dataset.boot = 'done';
+  const replay = el.querySelector<HTMLButtonElement>('[data-boot-replay]');
+  if (replay) replay.hidden = false;
 }
 
 export function isPlaying(root?: HTMLElement | null): boolean {
@@ -196,7 +198,7 @@ export function destroy(): void {
   state = null;
 }
 
-/** Esc skips, R replays, Space replays once stopped. Never traps Tab. */
+/** Esc skips, R replays, Space replays once stopped. Tabs seek. Never traps Tab. */
 function bindKeys(el: HTMLElement, handle: BootHandle): () => void {
   const onKey = (e: KeyboardEvent): void => {
     const t = e.target as HTMLElement | null;
@@ -252,6 +254,9 @@ export function init(root?: HTMLElement | null): BootHandle | null {
   }
   for (const btn of el.querySelectorAll<HTMLButtonElement>('[data-boot-skip]')) {
     btn.addEventListener('click', () => finish(el));
+  }
+  for (const tab of el.querySelectorAll<HTMLButtonElement>('.boot__tab[data-for]')) {
+    tab.addEventListener('click', () => seek(tab.dataset.for ?? 'end', el));
   }
 
   play(el);

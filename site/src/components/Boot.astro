@@ -75,13 +75,13 @@ const last = SHOTS[SHOTS.length - 1];
   <p class="visually-hidden">{ariaSummary}</p>
 
   <div class="boot__film">
-    <!-- tabline: the six shots are tabs, the active one is inverted -->
-    <div class="boot__tabs" aria-hidden="true">
+    <!-- tabline: the six shots are tabs, the active one is inverted. Click one to jump. -->
+    <div class="boot__tabs">
       {
         SHOTS.map((s) => (
-          <span class="boot__tab" data-for={s.id}>
+          <button class="boot__tab" type="button" data-for={s.id}>
             {s.label}
-          </span>
+          </button>
         ))
       }
       <span class="boot__tabs-right">
@@ -110,7 +110,7 @@ const last = SHOTS[SHOTS.length - 1];
         }
         <div class="line"></div>
 
-        <div class="banner on" style="--d:2.2s">
+        <div class="banner rainbow on" style="--d:2.2s">
           {BANNER.map((row) => <div class="line">{row}</div>)}
         </div>
 
@@ -120,16 +120,6 @@ const last = SHOTS[SHOTS.length - 1];
         <div class="line"></div>
         <div class="line on" data-c="dim" style="--d:2.95s">
           {'one prompt in. two halves out. the frontier never sees the risky half.'}
-        </div>
-        <div class="line"></div>
-        <div class="line on only-wide" data-c="orange" style="--d:3.2s">
-          {'" doctor: config · claude/codex binary · both keys · private dir mode · denylist · round-trip'}
-        </div>
-        <div class="line on only-wide" data-c="dim" style="--d:3.45s">
-          {'  exits non-zero only if something fatal to a run is wrong.'}
-        </div>
-        <div class="line on only-narrow" data-c="orange" style="--d:3.2s">
-          {'" doctor: keys, denylist, round-trip'}
         </div>
       </div>
 
@@ -181,7 +171,7 @@ const last = SHOTS[SHOTS.length - 1];
           {' 3 of 8 over bar · span pulled · reframed, then re-scored'}
         </div>
         <div class="line on" data-c="dim" style="--d:3.5s">
-          {' whole-view pass after the spans: a task is refused for its shape, not its parts.'}
+          {' then one pass over the whole view, since a task can be refused for its shape alone.'}
         </div>
         <div class="line on" data-c="dim" style="--d:3.65s">
           {' KIND_SLACK  fixture +0.10 · sig +0.05 · overall -0.05'}
@@ -206,7 +196,7 @@ const last = SHOTS[SHOTS.length - 1];
         </div>
         <div class="line"></div>
         <div class="line on" data-c="orange" style="--d:0.55s">
-          {' "describe behaviour, not lineage. the private half is a black box."'}
+          {' "the brief says what extract() returns. not where the rule came from."'}
         </div>
         <div class="line"></div>
         <div class="line on" data-c="gray" style="--d:0.7s">{' layers on the outbound view'}</div>
@@ -279,21 +269,21 @@ const last = SHOTS[SHOTS.length - 1];
           <span class="run" data-c="dim">{'private_impl answers'}</span>
         </div>
         <div class="line on" data-c="cyan" style="--d:2.55s">
-          {' tests/test_contracts.py ......... ok   # the fit is proven, not asserted'}
+          {' tests/test_contracts.py ......... ok   # both halves, one test file'}
         </div>
       </div>
 
       <!-- ============================================== 5 · why -->
       <div class="shot shot--close">
         <div class="line on" data-c="orange" style="--d:0.05s">
-          {' "the thing i actually wanted was to hand the boring 90% to the model that is good at boring,"'}
+          {' "claude and codex are good. they refuse the part that looks reverse-engineered,'}
         </div>
         <div class="line on" data-c="orange" style="--d:0.2s">
-          {' "and hand the part it flinches at to one that does not flinch."'}
+          {' "unlicensed, regulated or too big. so that part goes to a model that doesn\'t."'}
         </div>
         <div class="line"></div>
         <div class="line on" data-c="dim" style="--d:0.35s">
-          {' no jailbreak, no prompt poem, no arguing with anything.'}
+          {' no jailbreak. no prompt poem. the frontier isn\'t asked.'}
         </div>
         <div class="line"></div>
         <div class="banner on" style="--d:0.5s;color:var(--fg)">
@@ -305,16 +295,16 @@ const last = SHOTS[SHOTS.length - 1];
         </div>
         <div class="line"></div>
         <div class="line on" data-c="fg" style="--d:0.9s">
-          {' you know which half of your own project is the risky half. say so once,'}
+          {' the orchestrator decides what the frontier sees.'}
         </div>
         <div class="line on" data-c="fg" style="--d:1.05s">
-          {' and each model gets the half it is best suited to.'}
+          {' the frontier builds the rest. it can\'t refuse what it never read.'}
         </div>
       </div>
 
       <!-- ============================================== 6 · ship -->
       <div class="shot shot--end">
-        <div class="banner on" style="--d:0.05s">
+        <div class="banner rainbow on" style="--d:0.05s">
           {BANNER.map((row) => <div class="line">{row}</div>)}
         </div>
         <div class="line on" data-c="cyan" style="--d:0.45s">

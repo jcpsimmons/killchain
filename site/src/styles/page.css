@@ -1,8 +1,10 @@
 /* page.css — the landing page around the film.
  *
- * Same rules as the film: pure black, murphy colours, no gradients, no cards,
- * no rounded corners, no shadow. Structure comes from rules, gutters and
- * monospace alignment, nothing else.
+ * Same rules as the film: pure black, murphy colours at full strength, no
+ * gradients, no cards, no rounded corners, no shadow. Each colour has one job,
+ * as in the murphy exhibits: magenta headlines and ## headings, cyan links,
+ * orange " asides, peach captured names, yellow line numbers (the one thing
+ * that is dimmed), white for the typed command line, the blue statusline.
  */
 
 .page {
@@ -13,11 +15,12 @@
 
 /* ================================================================ topbar */
 
+/* the tabline: the site is the one open buffer, its tab inverted */
 .topbar {
   display: flex;
   align-items: center;
-  gap: 1.5ch;
-  padding: 0.75rem clamp(1rem, 4vw, 3.5rem);
+  gap: 2ch;
+  padding: 0.55rem var(--pad);
   border-bottom: 1px solid var(--split);
   font-size: 0.9rem;
   white-space: nowrap;
@@ -25,63 +28,127 @@
 }
 
 .topbar__mark {
-  color: var(--fg);
-  letter-spacing: 0.02em;
+  background: var(--fg);
+  color: var(--bg);
+  padding: 0.1rem 1.5ch;
 }
 
 .topbar__mark b {
   font-weight: 400;
-  color: var(--white);
 }
 
 .topbar__ver {
-  color: var(--fg);
-  opacity: 0.5;
+  color: var(--yellow);
 }
 
 .topbar__nav {
   margin-left: auto;
   display: flex;
-  gap: 2ch;
+  gap: 2.5ch;
 }
 
-.topbar__nav a {
-  color: var(--fg);
-  opacity: 0.72;
+/* ================================================================ intro */
+
+.intro {
+  padding-top: clamp(2.5rem, 7vw, 5.5rem);
+  padding-bottom: clamp(2rem, 5vw, 3.5rem);
 }
 
-.topbar__nav a:hover {
-  opacity: 1;
-  border-bottom-color: var(--fg);
+.intro__h {
+  font-size: clamp(1.4rem, 2.8vw, 2.1rem);
+  line-height: 1.3;
+  color: var(--magenta);
+  max-width: 34ch;
+  text-wrap: balance;
 }
 
-/* ================================================================ hero */
+.intro__p {
+  margin-top: 1.4rem;
+  max-width: 62ch;
+}
 
-.hero {
+/* ================================================================ film */
+
+.film {
+  border-top: 1px solid var(--split);
   border-bottom: 1px solid var(--split);
 }
 
-.hero__under {
-  display: flex;
-  align-items: center;
-  gap: 2ch;
-  padding: 0.6rem clamp(1rem, 4vw, 3.5rem);
-  border-top: 1px solid var(--split);
-  font-size: 0.82rem;
-  color: var(--fg);
-  opacity: 0.6;
-  white-space: nowrap;
-  overflow: hidden;
+/* ============================================================== command */
+
+/* a prompt line with a copy button notched into the right edge */
+.cmd {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin-top: 1.8rem;
+  border: 1px solid var(--teal);
 }
 
-.hero__under span:last-child {
-  margin-left: auto;
+.cmd--block {
+  display: block;
+  max-width: 74ch;
+  margin-top: 0;
+}
+
+.cmd pre {
+  margin: 0;
+  padding: 0.7rem 7ch 0.7rem 1.3rem;
+  overflow-x: auto;
+  color: var(--white);
+  line-height: 1.75;
+}
+
+.cmd--block pre {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.cmd .p {
+  color: var(--gray);
+  user-select: none;
+}
+
+.cmd .c {
+  color: var(--orange);
+}
+
+.copy {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--teal);
+  color: var(--cyan);
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.1rem 0.8ch;
+  cursor: pointer;
+}
+
+.copy:hover {
+  background: var(--cyan);
+  color: var(--bg);
+}
+
+/* an orange " comment, as in the exhibits */
+.aside {
+  margin-top: 1rem;
+  color: var(--orange);
+}
+
+.aside::before {
+  content: '" ';
+}
+
+.aside code {
+  color: var(--white);
 }
 
 /* ================================================================ blocks */
 
 .block {
-  padding: clamp(2.5rem, 6vw, 5rem) 0;
+  padding: clamp(2.5rem, 6vw, 4.5rem) 0;
   border-bottom: 1px solid var(--split);
 }
 
@@ -89,24 +156,23 @@
   border-bottom: 0;
 }
 
-/* the section marker: a buffer line number and a magenta heading */
+/* the section marker: a line number, a ## heading, a rule to the edge */
 .slug {
   display: flex;
   align-items: baseline;
   gap: 2ch;
-  margin-bottom: 1.4rem;
+  margin-bottom: 1.6rem;
 }
 
 .slug__n {
   color: var(--yellow);
   opacity: 0.55;
   font-size: 0.85rem;
-  min-width: 3ch;
 }
 
 .slug__t {
   color: var(--magenta);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
 }
 
 .slug__rule {
@@ -115,135 +181,15 @@
   transform: translateY(-0.3em);
 }
 
-.lede {
-  font-size: clamp(1.05rem, 2.1vw, 1.35rem);
-  line-height: 1.55;
-  color: var(--white);
-  max-width: 68ch;
-}
-
 .prose {
-  max-width: 74ch;
-  color: var(--fg);
-}
-
-.prose p + p {
-  margin-top: 1rem;
-}
-
-.prose strong {
-  font-weight: 400;
-  color: var(--white);
-}
-
-/* ================================================================ split */
-
-.split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 clamp(1.5rem, 4vw, 3rem);
-  margin-top: 2rem;
-}
-
-.half {
-  border-top: 1px solid var(--teal);
-  padding-top: 0.9rem;
-}
-
-.half h3 {
-  color: var(--cyan);
-  margin-bottom: 0.5rem;
-}
-
-.half--private h3 {
-  color: var(--magenta);
-}
-
-.half ul {
-  list-style: none;
-  padding: 0;
-}
-
-.half li {
-  color: var(--fg);
-  opacity: 0.85;
-}
-
-.half li::before {
-  content: '  ';
-  white-space: pre;
-}
-
-.half .tag {
-  color: var(--fg);
-  opacity: 0.5;
-  font-size: 0.85rem;
-  display: block;
-  margin-top: 0.75rem;
-}
-
-/* ================================================================ install */
-
-.install {
-  margin-top: 1.6rem;
-  border: 1px solid var(--teal);
-  position: relative;
-  max-width: 74ch;
-}
-
-.install__label {
-  position: absolute;
-  top: -0.62em;
-  left: 1.2ch;
-  background: var(--bg);
-  color: var(--magenta);
-  padding: 0 1ch;
-  font-size: 0.85rem;
-}
-
-.install pre {
-  margin: 0;
-  padding: 1.1rem 1.3rem;
-  overflow-x: auto;
-  color: var(--fg);
-  line-height: 1.75;
-}
-
-.install .p {
-  color: var(--dim, var(--fg));
-  opacity: 0.45;
-  user-select: none;
-}
-
-.install .c {
-  color: var(--cyan);
-}
-
-.install__copy {
-  position: absolute;
-  top: 0.45rem;
-  right: 0.5rem;
-  background: transparent;
-  border: 1px solid var(--split);
-  color: var(--fg);
-  font: inherit;
-  font-size: 0.8rem;
-  padding: 0.1rem 0.8ch;
-  cursor: pointer;
-  opacity: 0.65;
-}
-
-.install__copy:hover {
-  opacity: 1;
-  border-color: var(--fg);
-  color: var(--white);
+  max-width: 70ch;
 }
 
 /* ================================================================ table */
 
 .table {
   margin-top: 1.6rem;
-  border-top: 1px solid var(--split);
+  border-top: 1px solid var(--teal);
 }
 
 .tr {
@@ -256,8 +202,8 @@
 }
 
 .tr--head {
-  color: var(--gray);
-  font-size: 0.82rem;
+  color: var(--cyan);
+  font-size: 0.85rem;
   border-bottom-color: var(--teal);
 }
 
@@ -265,80 +211,65 @@
   color: var(--peach);
 }
 
-.tr__v {
-  color: var(--fg);
-  opacity: 0.85;
+/* ================================================================ limits */
+
+.limits {
+  list-style: none;
+  padding: 0;
+  max-width: 70ch;
 }
 
-/* ================================================================ notes */
-
-.notes {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(1.2rem, 3vw, 2.4rem);
-  margin-top: 1.8rem;
+.limits li {
+  padding-left: 2ch;
+  text-indent: -2ch;
 }
 
-.note {
-  border-top: 1px solid var(--split);
-  padding-top: 0.8rem;
+.limits li + li {
+  margin-top: 0.9rem;
 }
 
-.note h3 {
-  color: var(--cyan);
-  margin-bottom: 0.4rem;
-  font-size: 0.9rem;
-}
-
-.note p {
-  color: var(--fg);
-  opacity: 0.8;
-  font-size: 0.92rem;
-}
-
-.note--warn h3 {
+.limits li::before {
+  content: '" ';
   color: var(--orange);
+  white-space: pre;
 }
 
 /* ================================================================ footer */
 
+/* the statusline */
 .foot {
   margin-top: auto;
-  padding: 2.5rem 0 3rem;
-  border-top: 1px solid var(--teal);
-  color: var(--fg);
-  font-size: 0.88rem;
+  background: var(--status);
+  color: var(--white);
+  font-size: 0.9rem;
 }
 
 .foot__row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 2.5ch;
-  align-items: baseline;
+  gap: 0.4rem 2.5ch;
+  align-items: center;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
 }
 
-.foot a {
-  color: var(--cyan);
+.foot__mode {
+  background: var(--fg);
+  color: var(--bg);
+  padding: 0.05rem 1.4ch;
 }
 
-.foot__sig {
-  margin-top: 1.2rem;
-  color: var(--fg);
-  opacity: 0.6;
+.foot__right {
+  margin-left: auto;
 }
 
-.foot__sig .c {
-  color: var(--orange);
-  opacity: 1;
+.foot a:hover {
+  border-bottom-color: var(--cyan);
 }
 
 /* ================================================================ small */
 
 @media (max-width: 760px) {
-  .split,
-  .notes {
-    grid-template-columns: 1fr;
-  }
   .tr {
     grid-template-columns: 1fr;
     gap: 0.15rem;
@@ -349,7 +280,15 @@
   .topbar__nav {
     gap: 1.5ch;
   }
-  .hero__under span:not(:first-child) {
-    display: none;
+  .cmd {
+    display: block;
+  }
+  .cmd pre {
+    font-size: 0.9rem;
+    padding-left: 1ch;
+    padding-right: 6.5ch;
+  }
+  .foot__right {
+    margin-left: 0;
   }
 }
