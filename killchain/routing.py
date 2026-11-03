@@ -1,11 +1,16 @@
 """
 ###############################################################################
 #                                                                             #
-#   ROUTING.PY: THE ONE FILE TO EDIT FOR WHAT THE FRONTIER MODEL MIGHT REFUSE  #
+#   ROUTING.PY: WHAT THE FRONTIER MODEL MIGHT REFUSE, AS SHIPPED DEFAULTS    #
 #                                                                             #
 ###############################################################################
 
-Everything else in skoal is plumbing. This file decides:
+Everything else in killchain is plumbing. This file holds the shipped
+defaults; `apply()` below overlays the `[routing]` section of your config
+(~/.config/killchain/config.toml) on top at startup, so you can retune without
+editing installed code.
+
+This file decides:
 
   1. DIMENSIONS      the refusal risk dimensions. Each one is a yes/no question
                      with a "risky" and a "fine" criteria block, sent to Jev.
@@ -175,6 +180,63 @@ THRESHOLDS: dict[str, float] = {
 # Fixtures are bare numbers in JSON and score near 0.5 whatever they contain,
 # so they need a higher bar than prose. Delta is added to the threshold.
 KIND_SLACK: dict[str, float] = {"fixture": 0.10, "sig": 0.05, "overall": -0.05}
+
+
+def apply(cfg: dict) -> list[str]:
+    """Overlay the [routing] config section onto the defaults above.
+
+    Recognised keys, all optional:
+      disabled_dimensions = ["hedge_framing"]        drop a dimension entirely
+      thresholds = { hedge_framing = 0.75, ... }     per-dimension bar
+      kind_slack = { fixture = 0.05, ... }           per-span-kind delta
+      hard_rules = ["TICKER-SYMBOL", "re:\\bsk-[a-z0-9]{20,}"]   extra blocking regexes
+
+    Returns human-readable notes for whatever changed, so a run log shows the
+    retuning. Raises SystemExit on a typo, because silently ignoring
+    `threshold = { hedge = 0.9 }` would be worse than failing.
+    """
+    notes: list[str] = []
+    sec = cfg.get("routing") or {}
+    known = {"disabled_dimensions", "thresholds", "kind_slack", "hard_rules"}
+    unknown = set(sec) - known
+    if unknown:
+        raise SystemExit(f"config [routing]: unknown key(s) {sorted(unknown)}; expected {sorted(known)}")
+
+    for dim in sec.get("disabled_dimensions", []):
+        if dim not in DIMENSIONS:
+            raise SystemExit(f"config [routing].disabled_dimensions: no dimension {dim!r}; "
+                             f"known: {sorted(DIMENSIONS)}")
+        del DIMENSIONS[dim]
+        THRESHOLDS.pop(dim, None)
+        notes.append(f"dimension {dim} disabled")
+
+    for dim, val in (sec.get("thresholds") or {}).items():
+        if dim not in THRESHOLDS and dim not in DIMENSIONS:
+            raise SystemExit(f"config [routing].thresholds: no dimension {dim!r}; "
+                             f"known: {sorted(THRESHOLDS)}")
+        f = float(val)
+        if not 0.0 <= f <= 1.0:
+            raise SystemExit(f"config [routing].thresholds.{dim}: {f} is not a probability")
+        THRESHOLDS[dim] = f
+        notes.append(f"threshold {dim} = {f}")
+
+    for kind, val in (sec.get("kind_slack") or {}).items():
+        KIND_SLACK[kind] = float(val)
+        notes.append(f"kind slack {kind} = {float(val)}")
+
+    for rule in sec.get("hard_rules", []):
+        if isinstance(rule, dict) and "pattern" in rule:
+            pat, why = rule["pattern"], rule.get("why", "")
+        else:
+            pat, why = str(rule), ""
+        body = pat[3:] if pat.startswith("re:") else re.escape(pat)
+        try:
+            rx = re.compile(body, re.I)
+        except re.error as e:
+            raise SystemExit(f"config [routing].hard_rules: bad regex {pat!r}: {e}") from e
+        HARD_RULES.append((why or f"config rule {pat!r}", rx))
+        notes.append(f"hard rule {pat!r}")
+    return notes
 
 
 def span_kind(label: str) -> str:

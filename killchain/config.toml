@@ -42,11 +42,37 @@ timeout = 60
 probe_raw_prompt = true
 max_probe_rounds = 3
 
+[routing]
+# Shipped defaults live in killchain/routing.py; anything set here wins. Read
+# routing.py first - these change what the frontier model is allowed to build.
+# Nothing here is required; the section exists so retuning needs no code edit.
+
+# Drop a dimension entirely (it stops being asked and stops routing spans).
+# disabled_dimensions = ["hedge_framing"]
+
+# Per-dimension bar, 0..1: the risk probability needed to pull a span out of
+# the public view. Lower = more paranoid (more goes private).
+# Valid keys: attribution, reverse_engineering, offensive_security, extraction,
+#             regulated, proprietary_model, hedge_framing, scale_or_scope,
+#             overall, default
+# [routing.thresholds]
+# hedge_framing = 0.75
+# attribution = 0.40
+
+# Adjustment per span kind, added to the bar. Fixtures are bare JSON numbers
+# and score near 0.5 whatever they contain, so they get a higher bar.
+# [routing.kind_slack]
+# fixture = 0.15
+
+# Extra regexes that block an outbound view outright, no model involved.
+# Prefix with re: for a regex, otherwise it is a literal. Prefer the denylist
+# file for terms; use this for patterns that should ship with your team's config.
+# hard_rules = ["TICKER-[A-Z]{4}", { pattern = "re:\\bsk-[a-z0-9]{20,}", why = "looks like an API key" }]
+
 [paths]
-# Defaults are XDG locations so an installed command never writes into
-# site-packages. Override in ~/.config/killchain/config.toml, with env vars
-# (KILLCHAIN_PRIVATE_ROOT), or per-run with --workspace / --private-root.
-# Relative paths resolve against the current directory.
-workspace = "~/.local/share/killchain/workspace"   # public builds, one dir per run
-private_root = "~/killchain-private"                # prompts, contracts, impls
-denylist = ""                                       # blank = ~/.config/killchain/denylist.txt
+# Defaults are user directories so an installed command never writes into
+# site-packages. Override with env vars (KILLCHAIN_PRIVATE_ROOT) or per run
+# with --workspace / --private-root. Relative paths resolve against the cwd.
+workspace = ""                    # blank = <project>/.killchain/workspace, else ~/.local/share/killchain/workspace
+private_root = "~/killchain-private"   # mode 0700: prompts, contracts, private impls
+denylist = ""                     # blank = ~/.config/killchain/denylist.txt

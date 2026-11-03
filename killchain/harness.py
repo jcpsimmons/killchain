@@ -56,12 +56,21 @@ def load_cfg(path: Path, overrides: argparse.Namespace) -> dict:
         cfg["paths"]["private_root"] = overrides.private_root
     if overrides.workspace:
         cfg["paths"]["workspace"] = overrides.workspace
+    for note in routing.apply(cfg):
+        log(f"routing: {note}")
     # Relative paths resolve against the cwd, not the package: an installed
     # tool has no business writing next to its own source.
-    for k in ("workspace", "private_root"):
-        p = Path(cfg["paths"][k]).expanduser()
-        cfg["paths"][k] = p if p.is_absolute() else Path.cwd() / p
+    # workspace: "" = per-project .killchain/ (or the global data dir outside
+    # a project); a path = exactly that path.
+    raw_ws = str(cfg["paths"].get("workspace") or "").strip()
+    cfg["paths"]["workspace"] = paths.workspace() if not raw_ws else _abs(raw_ws)
+    cfg["paths"]["private_root"] = _abs(cfg["paths"]["private_root"])
     return cfg
+
+
+def _abs(raw: str) -> Path:
+    p = Path(raw).expanduser()
+    return p if p.is_absolute() else Path.cwd() / p
 
 
 def prompt_text(name: str, **kw) -> str:
