@@ -1,0 +1,48 @@
+---
+import '../styles/palette.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'killchain — refusal-first split build',
+  description = 'Split a build so a frontier coding agent never sees the risky half. One prompt in, two halves out: a public half built by Claude Code or Codex against stubs, and a private half implemented by an abliterated orchestrator. Joined by a contract.',
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#000000" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@drjoshcsimmons" />
+
+    <link
+      rel="preload"
+      href="/BigBlueTerm437NerdFontMono-Regular.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">skip to content</a>
+    <slot />
+  </body>
+</html>

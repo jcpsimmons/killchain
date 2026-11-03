@@ -1,0 +1,185 @@
+/* palette.css — the whole visual system.
+ *
+ * NeoVim `murphy` colorscheme, as shipped in $VIMRUNTIME/colors/murphy.vim.
+ * Harsh by design: pure black ground, no gradients, no glow, no blur, no
+ * rounded corners. If a value is not in this block it does not belong on the
+ * page.
+ */
+
+@font-face {
+  font-family: 'BBT437';
+  src: url('/BigBlueTerm437NerdFontMono-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  /* monospace metrics only: the site never wants the Nerd Font fallback box */
+  unicode-range: U+0000-00FF, U+2500-257F, U+2580-259F, U+25A0-25FF, U+2600-26FF;
+}
+
+:root {
+  --bg: #000000;
+  --fg: #87ff87;
+  --status: #00008b;
+  --yellow: #ffff00;
+  --cyan: #00ffff;
+  --orange: #ffa700;
+  --magenta: #ff00ff;
+  --red: #ff0000;
+  --peach: #ffd7af;
+  --gray: #bcbcbc;
+  --teal: #00afaf;
+  --white: #ffffff;
+  --cursorline: #444444;
+  --split: #3a3a3a;
+
+  --cell: 0.6667em;
+  --line: 1.01em;
+  --measure: 92ch;
+  --pad: clamp(1rem, 4vw, 3.5rem);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'BBT437', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 15px;
+  line-height: 1.62;
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+  font-kerning: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Every heading is a terminal line, not a display face. */
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+figure,
+pre,
+blockquote {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 400;
+  font-size: inherit;
+  line-height: 1.3;
+}
+
+a {
+  color: var(--cyan);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+a:hover {
+  border-bottom-color: var(--cyan);
+}
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 1px solid var(--teal);
+  outline-offset: 2px;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* ---------------------------------------------------------- utilities */
+
+.wrap {
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding-inline: var(--pad);
+}
+
+/* a comment line in the buffer */
+.cm {
+  color: var(--orange);
+}
+
+.dim {
+  color: var(--fg);
+  opacity: 0.58;
+}
+
+.rule {
+  border: 0;
+  border-top: 1px solid var(--teal);
+  opacity: 0.55;
+  margin: 0;
+}
+
+.hair {
+  border: 0;
+  border-top: 1px solid var(--split);
+  margin: 0;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Hidden with clip-path rather than a negative offset, so it can never widen
+   the document or register as off-screen content. */
+.skip-link {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: var(--fg);
+  color: var(--bg);
+  padding: 0.4rem 0.8rem;
+  z-index: 100;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip-link:focus {
+  clip-path: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
