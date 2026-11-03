@@ -34,6 +34,7 @@ killchain = "killchain.harness:main"
 Homepage = "https://github.com/jcpsimmons/killchain"
 Repository = "https://github.com/jcpsimmons/killchain"
 Issues = "https://github.com/jcpsimmons/killchain/issues"
+YouTube = "https://youtube.com/@drjoshcsimmons"
 
 # `packages` already sweeps in prompts/ and config.toml; force-include would
 # add them a second time and hatchling rejects the duplicate.

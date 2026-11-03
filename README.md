@@ -214,3 +214,31 @@ frontier ships a new model.
 v1 limits: Python interfaces only; the orchestrator writes files by returning
 JSON (no tool use needed on its side); one contract round, no renegotiation
 mid-build.
+
+## Why this exists
+
+I keep handing the good model work it will not do. The build comes back with a
+polite paragraph about what it cannot help with and a function that returns a
+placeholder. So I drop to something weaker and looser, which writes the hard
+part badly and the easy part badly too, and now I am debugging two models
+instead of one.
+
+The thing I actually wanted was to hand the boring 90% to the model that is
+good at boring, and hand the part it flinches at to one that does not flinch.
+That is all this does. No jailbreak, no prompt poem, no arguing with anything.
+You know which half of your own project is the risky half. Say so once, and
+each model gets the half it is best suited to.
+
+Frame a task by what it does and Claude Code will build it. Frame it by what it
+resembles and you get disclaimers and made-up numbers. That difference is not a
+bug in the model. It is a difference in how you asked.
+
+I write about building with these things, and about the parts of the industry
+that deserve a harder look, over at
+**[youtube.com/@drjoshcsimmons](https://youtube.com/@drjoshcsimmons)**. Issues
+and war stories are welcome in the
+[repo](https://github.com/jcpsimmons/killchain).
+
+MIT licensed.
+
+- Dr. J

@@ -158,4 +158,7 @@ def run(cfg: dict) -> int:
         print(f"{failed} check(s) failed.")
     else:
         print("all checks passed — try: killchain \"your task\"")
+    if failed:
+        print("Still stuck? War stories and how this works: "
+              "https://youtube.com/@drjoshcsimmons")
     return 1 if fatal else 0

@@ -281,7 +281,11 @@ def implement_private(cfg: dict, user_prompt: str, c: Contract, public: Path, pr
 
 # ---------------------------------------------------------------- main
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="Docs and war stories: https://youtube.com/@drjoshcsimmons",
+    )
     ap.add_argument("prompt", nargs="?", help="task prompt (or use -f)")
     ap.add_argument("-f", "--file", help="read prompt from file")
     ap.add_argument("-c", "--config", default=None,
