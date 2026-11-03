@@ -7,3 +7,6 @@ dist/
 .ruff_cache/
 .pytest_cache/
 workspace/
+
+# Git worktrees checked out inside the repo are full duplicate copies.
+.worktrees/

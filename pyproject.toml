@@ -47,6 +47,11 @@ include = ["killchain", "README.md", "pyproject.toml"]
 # git-tracked, so hatchling's VCS sweep would otherwise pull site/ and its
 # node_modules into the sdist. Keep the release artefact to the package.
 exclude = ["/site"]
+# Same reason: a git worktree checked out inside the repo is a full second copy
+# of the package, and the VCS sweep happily ships it. Builds from CI never see
+# one, so this only bites local releases, which is the worst way to find out.
+[tool.hatch.build.targets.sdist.force-exclude]
+directories = ["/.worktrees"]
 
 [tool.ruff]
 target-version = "py311"
