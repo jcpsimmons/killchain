@@ -10,3 +10,4 @@ workspace/
 
 # Git worktrees checked out inside the repo are full duplicate copies.
 .worktrees/
+.claude/

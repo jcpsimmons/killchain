@@ -42,16 +42,14 @@ YouTube = "https://youtube.com/@drjoshcsimmons"
 packages = ["killchain"]
 
 [tool.hatch.build.targets.sdist]
+# Keep the release artefact to the package. An explicit list rather than a
+# deny-list: a git worktree checked out inside the repo is a second full copy
+# of the package, and hatchling's VCS sweep ships it (the sdist went to 41
+# entries against a clean 22 when one existed). CI builds from a clean clone so
+# this only bites local releases, which is the worst way to find out.
 include = ["killchain", "README.md", "pyproject.toml"]
-# The landing page is its own build (site/, Astro, deployed separately). It is
-# git-tracked, so hatchling's VCS sweep would otherwise pull site/ and its
-# node_modules into the sdist. Keep the release artefact to the package.
+# The landing page is its own build (site/, Astro, deployed separately).
 exclude = ["/site"]
-# Same reason: a git worktree checked out inside the repo is a full second copy
-# of the package, and the VCS sweep happily ships it. Builds from CI never see
-# one, so this only bites local releases, which is the worst way to find out.
-[tool.hatch.build.targets.sdist.force-exclude]
-directories = ["/.worktrees"]
 
 [tool.ruff]
 target-version = "py311"
