@@ -43,6 +43,10 @@ packages = ["killchain"]
 
 [tool.hatch.build.targets.sdist]
 include = ["killchain", "README.md", "pyproject.toml"]
+# The landing page is its own build (site/, Astro, deployed separately). It is
+# git-tracked, so hatchling's VCS sweep would otherwise pull site/ and its
+# node_modules into the sdist. Keep the release artefact to the package.
+exclude = ["/site"]
 
 [tool.ruff]
 target-version = "py311"
