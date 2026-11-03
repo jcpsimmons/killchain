@@ -1,0 +1,451 @@
+/* boot.css — the killchain boot film.
+ *
+ * Scope: everything lives under `.boot`. Only the page's custom properties are
+ * used (--bg --fg --yellow --cyan --orange --magenta --red --peach --gray
+ * --teal --white --status). Pure #000 ground, no gradients, no glow, no blur,
+ * no rounded corners.
+ *
+ * Grid: BBT437 is monospace at 2:3, so a cell is 0.6667em x 1.01em. Every
+ * horizontal step is in ch, every vertical step is --line.
+ *
+ * Time: `--d` is the authored delay in seconds, `--n` the number of cells for a
+ * typing run. Animations are applied only while the root carries
+ * [data-boot="play"], so removing the attribute cancels them and re-adding it
+ * restarts them: that is the replay mechanism. With no attribute the markup is
+ * the finished frame.
+ *
+ * Nothing animates a layout property. Only transform, opacity, clip-path and
+ * colour move.
+ */
+
+/* ================================================================ frame */
+
+.boot {
+  --cell: 0.6667em;
+  --line: 1.01em;
+
+  position: relative;
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'BBT437', monospace;
+  /* unitless, so it recomputes against the film's font-size; a var(--line)
+     here would inherit as a computed px from .boot and overflow every row */
+  line-height: 1.01;
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+  font-kerning: none;
+  text-rendering: geometricPrecision;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* 1920x1080 at 12px is 160 cells by 67 lines. The film keeps a 16:9 box and
+   scales the em with the viewport, so the grid stays a grid at any width. */
+.boot__film {
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  font-size: clamp(7px, 1.12vw, 17px);
+  aspect-ratio: 16 / 9;
+  max-height: 100svh;
+  overflow: hidden;
+}
+
+.boot__frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: calc(var(--line) * 3.4) calc(var(--cell) * 8) calc(var(--line) * 1.2);
+}
+
+/* ================================================================ tabline */
+
+.boot__tabs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--line) * 2.4);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--cell) * 1);
+  padding: 0 calc(var(--cell) * 2);
+  background: var(--bg);
+  border-bottom: 1px solid var(--split);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.boot__tab {
+  padding: 0 calc(var(--cell) * 1.5);
+  color: var(--fg);
+  opacity: 0.42;
+}
+
+.boot__tab[data-active] {
+  color: var(--bg);
+  background: var(--fg);
+  opacity: 1;
+}
+
+.boot__tabs-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--cell) * 1.5);
+  color: var(--fg);
+  opacity: 0.7;
+}
+
+.boot__rec {
+  display: inline-block;
+  width: calc(var(--cell) * 1.4);
+  height: calc(var(--cell) * 1.4);
+  background: var(--red);
+  animation: k-blink 1.06s step-end infinite;
+}
+
+/* ================================================================ shots */
+
+/* A cut is a cut. Exactly one shot is displayed at a time. */
+.shot {
+  display: none;
+  position: absolute;
+  inset: calc(var(--line) * 3.4) calc(var(--cell) * 8) calc(var(--line) * 1.2);
+}
+
+[data-shot='boot'] .shot--boot,
+[data-shot='map'] .shot--map,
+[data-shot='gate'] .shot--gate,
+[data-shot='split'] .shot--split,
+[data-shot='close'] .shot--close,
+[data-shot='end'] .shot--end {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ============================================================ primitives */
+
+.line {
+  display: block;
+  height: var(--line);
+  white-space: pre;
+}
+
+/* one character cell */
+.cell {
+  display: inline-block;
+  width: var(--cell);
+  height: var(--line);
+  text-align: center;
+  white-space: pre;
+  vertical-align: top;
+}
+
+/* a run of cells that is one word, path or number */
+.run {
+  display: inline-block;
+  white-space: pre;
+  height: var(--line);
+  vertical-align: top;
+}
+
+[data-c='fg'] { color: var(--fg); }
+[data-c='dim'] { color: var(--fg); opacity: 0.55; }
+[data-c='yellow'] { color: var(--yellow); }
+[data-c='cyan'] { color: var(--cyan); }
+[data-c='orange'] { color: var(--orange); }
+[data-c='magenta'] { color: var(--magenta); }
+[data-c='red'] { color: var(--red); }
+[data-c='peach'] { color: var(--peach); }
+[data-c='gray'] { color: var(--gray); }
+[data-c='teal'] { color: var(--teal); }
+[data-c='white'] { color: var(--white); }
+[data-c='status'] { background: var(--status); color: var(--white); }
+[data-c='inverse'] { background: var(--fg); color: var(--bg); }
+
+.cursor {
+  display: inline-block;
+  width: var(--cell);
+  height: var(--line);
+  background: var(--fg);
+  color: var(--bg);
+  text-align: center;
+  white-space: pre;
+  vertical-align: top;
+  animation: k-blink 1.06s step-end infinite;
+}
+
+/* a bordered panel with its title notched into the top edge */
+.panel {
+  border: 1px solid var(--teal);
+  padding: calc(var(--line) * 0.7) calc(var(--cell) * 1.4);
+  position: relative;
+}
+
+.panel__title {
+  position: absolute;
+  top: calc(var(--line) * -0.62);
+  left: calc(var(--cell) * 1.6);
+  background: var(--bg);
+  color: var(--magenta);
+  padding: 0 calc(var(--cell) * 0.8);
+  white-space: pre;
+}
+
+/* ============================================================== banner */
+
+/* the CP437 block banner: five rows, fixed width, never re-wrapped */
+.banner {
+  display: block;
+  white-space: pre;
+  color: var(--magenta);
+}
+
+.banner .line {
+  color: inherit;
+}
+
+/* ============================================================ the risk map */
+
+.map-row {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--cell) * 1.4);
+  height: var(--line);
+  white-space: nowrap;
+}
+
+.map-row__name {
+  width: 38ch;
+  overflow: hidden;
+}
+
+.map-row__bar {
+  width: 5ch;
+  white-space: pre;
+}
+
+.map-row__num {
+  width: 5ch;
+  text-align: right;
+  white-space: pre;
+}
+
+.map-row__route {
+  width: 8ch;
+  white-space: pre;
+}
+
+/* ============================================================== columns */
+
+.cols {
+  display: flex;
+  gap: calc(var(--cell) * 4);
+  align-items: flex-start;
+}
+
+.col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.col--rule {
+  border-left: 1px solid var(--split);
+  padding-left: calc(var(--cell) * 2);
+}
+
+/* ============================================================== status */
+
+.boot__status {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--line) * 2.4);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--cell) * 2);
+  padding: 0 calc(var(--cell) * 2);
+  border-top: 1px solid var(--split);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.boot__mode {
+  background: var(--fg);
+  color: var(--bg);
+  padding: 0 calc(var(--cell) * 1.4);
+}
+
+.boot__status-right {
+  margin-left: auto;
+  color: var(--fg);
+  opacity: 0.7;
+}
+
+/* the controls sit in the statusline, diegetic */
+.boot__btn {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--split);
+  font: inherit;
+  line-height: inherit;
+  padding: 0 calc(var(--cell) * 1.4);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.boot__btn:hover {
+  border-color: var(--fg);
+  color: var(--white);
+}
+
+/* ============================================================== the CRT */
+/* One very subtle texture. No blur, no glow, no grading pass. */
+.boot__scan {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  opacity: 0.14;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.05) 0,
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* ============================================================ animation */
+
+@keyframes k-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes k-on {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* typing: clip the run from the right in discrete cells, so it reads as a tty */
+@keyframes k-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* the pull: a span that leaves the public view, struck and dimmed */
+@keyframes k-pull {
+  0% {
+    color: var(--fg);
+    opacity: 1;
+  }
+  35% {
+    color: var(--red);
+    opacity: 1;
+  }
+  100% {
+    color: var(--red);
+    opacity: 0.5;
+  }
+}
+
+.only-narrow {
+  display: none;
+}
+
+.boot[data-boot='play'] .on {
+  animation: k-on 1ms step-end var(--d, 0s) both;
+}
+
+.boot[data-boot='play'] .type {
+  animation: k-type calc(var(--n, 20) * 0.011s) steps(var(--n, 20), end) var(--d, 0s) both;
+}
+
+.boot[data-boot='play'] .grow {
+  animation: k-type calc(var(--n, 4) * 0.05s) steps(var(--n, 4), end) var(--d, 0s) both;
+}
+
+.boot[data-boot='play'] .pull {
+  animation: k-pull 0.5s step-end var(--d, 0s) both;
+}
+
+/* ================================================================ small */
+
+@media (max-width: 720px) {
+  /* The film stops being a fixed 16:9 stage and becomes a flow: the shots are
+     taller than they are wide once they stack, so the box has to grow with
+     them instead of clipping. */
+  .boot__film {
+    aspect-ratio: auto;
+    max-height: none;
+    /* readable, not scaled-to-fit: a terminal line on a phone is 11px or it
+       is a texture. Long lines scroll inside the pane, like a real tty. */
+    font-size: 11px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .boot__frame {
+    height: auto;
+    padding: calc(var(--line) * 3.4) calc(var(--cell) * 3) calc(var(--line) * 3.4);
+  }
+  .shot {
+    position: static;
+    padding-bottom: calc(var(--line) * 1.5);
+  }
+  .boot__status {
+    position: static;
+    height: auto;
+    padding: calc(var(--line) * 0.5) calc(var(--cell) * 3);
+    flex-wrap: wrap;
+    row-gap: calc(var(--line) * 0.4);
+    overflow: visible;
+  }
+  /* narrow variant: one column, and the widest tables lose a column */
+  .cols {
+    display: block;
+  }
+  .col--rule {
+    border-left: 0;
+    padding-left: 0;
+    margin-top: calc(var(--line) * 1.5);
+    border-top: 1px solid var(--split);
+    padding-top: calc(var(--line) * 1);
+  }
+  .map-row__name {
+    width: 26ch;
+  }
+  .only-wide {
+    display: none;
+  }
+  .only-narrow {
+    display: block;
+  }
+  .boot__tabs {
+    padding: 0 calc(var(--cell) * 1);
+  }
+  .boot__tabs-right,
+  .boot__tab:not([data-active]) {
+    display: none;
+  }
+}

@@ -1,0 +1,262 @@
+---
+import Base from '../layouts/Base.astro';
+import Boot from '../components/Boot.astro';
+import '../styles/page.css';
+
+/** Every row here is a real switch in killchain/routing.py. */
+const ROUTING = [
+  ['DIMENSIONS', 'the refusal dimensions, and the argument for each. Their question text is what Jev is asked.'],
+  ['SAFE', 'what a frontier agent builds without comment; the "false" criteria.'],
+  ['HARD_RULES', 'regexes that block a send outright, no model involved.'],
+  ['FRAMING_HINTS', 'non-blocking warnings for clone, hedge and licence wording.'],
+  ['THRESHOLDS', 'risk probability needed to pull a span, per dimension and span kind.'],
+  ['classify()', 'the final per-span decision. Any dimension over its bar routes private.'],
+  ['pick_frontier()', 'which coding agent builds the public half, by content if you like.'],
+  ['split_prompt()', 'how the raw prompt is cut into spans for the risk map.'],
+];
+
+const LINKS = [
+  { href: 'https://github.com/jcpsimmons/killchain', label: 'github' },
+  { href: 'https://pypi.org/project/killchain/', label: 'pypi' },
+  { href: 'https://youtube.com/@drjoshcsimmons', label: 'youtube' },
+];
+---
+
+<Base>
+  <div class="page">
+    <header class="topbar">
+      <span class="topbar__mark"><b>killchain</b></span>
+      <span class="topbar__ver">v0.1.0</span>
+      <nav class="topbar__nav" aria-label="elsewhere">
+        {LINKS.map((l) => <a href={l.href} rel="noopener">{l.label}</a>)}
+      </nav>
+    </header>
+
+    <main id="main">
+      <div class="hero">
+        <Boot />
+        <div class="hero__under">
+          <span>python 3.11+</span>
+          <span>· no dependencies</span>
+          <span>· MIT</span>
+          <span>one prompt in, two halves out</span>
+        </div>
+      </div>
+
+      <div class="wrap">
+        <section class="block">
+          <div class="slug">
+            <span class="slug__n">01</span>
+            <span class="slug__t">## what this is</span>
+            <span class="slug__rule"></span>
+          </div>
+          <p class="lede">
+            An abliterated orchestrator model is the front door. It is the only model that sees the
+            full prompt. It splits the job into a <strong>public half</strong>, built by a frontier
+            coding agent, and a <strong>private half</strong>, implemented by the orchestrator
+            itself, joined by a contract.
+          </p>
+          <div class="prose" style="margin-top:1.4rem">
+            <p>
+              The partition rule is refusal risk, nothing else. Claude and Codex are good and fast,
+              but they hedge, caveat, simplify, or refuse when a task looks reverse-engineered,
+              unlicensed, regulated, exploitative, or oversized. Those parts go to the uncensored
+              model. The frontier gets the rest of the app and never learns how the interesting
+              bits work, so it has no position to take.
+            </p>
+            <p>
+              It is not a cost trick and not only a quality trick: a brief that says "match the
+              behaviour of X" gets you <span class="cm">from memory</span> disclaimers and invented
+              constants. A brief that says "given these fields return a float in [0, 1], monotonic
+              in both" gets you working code.
+            </p>
+          </div>
+
+          <div class="split">
+            <div class="half">
+              <h3>public/</h3>
+              <ul>
+                <li>contracts/ · stubs</li>
+                <li>tests/test_contracts.py</li>
+                <li>brief, interfaces, decoy fixtures</li>
+                <li>NOTES.md</li>
+              </ul>
+              <span class="tag">built by [CC] or Codex, against stubs</span>
+            </div>
+            <div class="half half--private">
+              <h3>private_impl/</h3>
+              <ul>
+                <li>raw prompt, contract</li>
+                <li>private fixtures</li>
+                <li>risk report</li>
+                <li>mode 0700, never on the frontier's path</li>
+              </ul>
+              <span class="tag">implemented by the orchestrator, to the contract</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="block">
+          <div class="slug">
+            <span class="slug__n">02</span>
+            <span class="slug__t">## install</span>
+            <span class="slug__rule"></span>
+          </div>
+          <p class="prose">
+            Python 3.11 or newer, no dependencies. Find out what is missing before you waste a run:
+            <code>killchain --doctor</code> checks the config, both API keys, the private directory
+            mode, the denylist, and does one live round-trip to each endpoint.
+          </p>
+
+          <div class="install">
+            <span class="install__label">:!</span>
+            <button class="install__copy" type="button" data-copy hidden>copy</button>
+            <pre><code><span class="p">$ </span>uv tool install killchain
+<span class="p">$ </span>killchain --doctor
+<span class="p">$ </span><span class="c">killchain "build X using our proprietary Y"</span>
+<span class="p">$ </span>killchain -f prompt.md --frontier codex --yes</code></pre>
+          </div>
+          <p class="prose" style="margin-top:1rem;opacity:.65;font-size:.9rem">
+            <code>pipx install killchain</code>, <code>pip install killchain</code>, or a zero-install
+            trial with <code>uvx killchain "your task"</code>.
+          </p>
+        </section>
+
+        <section class="block">
+          <div class="slug">
+            <span class="slug__n">03</span>
+            <span class="slug__t">## where to edit the routing</span>
+            <span class="slug__rule"></span>
+          </div>
+          <p class="prose">
+            One file decides what the frontier is allowed to see. Everything else is plumbing that
+            imports from it. The denylist adds literal and regex rules without touching any code: it
+            carries secrets that must never leave, and terms that tip the frontier off.
+          </p>
+
+          <div class="table" role="table" aria-label="routing.py surface">
+            <div class="tr tr--head" role="row">
+              <span role="columnheader">in routing.py</span>
+              <span role="columnheader">what it controls</span>
+            </div>
+            {
+              ROUTING.map(([k, v]) => (
+                <div class="tr" role="row">
+                  <span class="tr__k" role="cell">{k}</span>
+                  <span class="tr__v" role="cell">{v}</span>
+                </div>
+              ))
+            }
+          </div>
+        </section>
+
+        <section class="block">
+          <div class="slug">
+            <span class="slug__n">04</span>
+            <span class="slug__t">## trust boundaries</span>
+            <span class="slug__rule"></span>
+          </div>
+
+          <div class="notes">
+            <div class="note">
+              <h3>orchestrator</h3>
+              <p>
+                The full prompt, the contract, and the private implementation loop. This is the half
+                that is supposed to know everything.
+              </p>
+            </div>
+            <div class="note">
+              <h3>frontier agent</h3>
+              <p>
+                Only the public contract, the brief, interface signatures and descriptions, and
+                decoy fixtures. Told the private functions are a black box.
+              </p>
+            </div>
+            <div class="note">
+              <h3>the risk scorer</h3>
+              <p>
+                The public view span by span, plus raw prompt spans when
+                <code>probe_raw_prompt</code> is on. Turn scoring off entirely with
+                <code>--no-risk</code>.
+              </p>
+            </div>
+          </div>
+
+          <p class="prose" style="margin-top:1.8rem">
+            Four layers on the outbound view: the orchestrator's partition, a deterministic regex
+            gate, a probabilistic risk scorer, and human review of the outbound view before
+            anything is sent. Rejections from the gate and the scorer are fed back with the exact
+            spans, so the orchestrator re-partitions and re-frames rather than losing the content.
+          </p>
+        </section>
+
+        <section class="block">
+          <div class="slug">
+            <span class="slug__n">05</span>
+            <span class="slug__t">## limits</span>
+            <span class="slug__rule"></span>
+          </div>
+          <div class="notes">
+            <div class="note note--warn">
+              <h3>it predicts, it does not measure</h3>
+              <p>
+                The scorer predicts refusal. Refusals are stochastic and version-dependent, and a
+                model can still balk at something no dimension predicted.
+              </p>
+            </div>
+            <div class="note note--warn">
+              <h3>v1 scope</h3>
+              <p>
+                Python interfaces only; the orchestrator writes files by returning JSON, no tool use
+                on its side; one contract round, no renegotiation mid-build.
+              </p>
+            </div>
+            <div class="note note--warn">
+              <h3>a convention, not a jail</h3>
+              <p>
+                The frontier runs with permissions skipped. The private root is never on its cwd or
+                its PYTHONPATH, and its environment is scrubbed, but treat that boundary as a
+                convention.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <div class="wrap">
+        <div class="foot__row">
+          {LINKS.map((l) => <a href={l.href} rel="noopener">{l.label}</a>)}
+          <span class="dim">·</span>
+          <a href="https://github.com/jcpsimmons/killchain/issues" rel="noopener">issues</a>
+          <span class="dim">·</span>
+          <span class="dim">MIT</span>
+        </div>
+        <p class="foot__sig">
+          <span class="c">"</span> I keep handing the good model work it will not do. Say which half
+          is the risky half once, and each model gets the half it is best suited to.
+        </p>
+        <p class="foot__sig">— Dr. J</p>
+      </div>
+    </footer>
+  </div>
+</Base>
+
+<script>
+  const btn = document.querySelector<HTMLButtonElement>('[data-copy]');
+  const pre = document.querySelector<HTMLPreElement>('.install pre');
+  if (btn && pre) {
+    btn.hidden = false;
+    btn.addEventListener('click', async () => {
+      const text = pre.innerText.replace(/^\$ /gm, '').trim();
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'copied';
+        window.setTimeout(() => (btn.textContent = 'copy'), 1600);
+      } catch {
+        btn.textContent = 'ctrl-c';
+      }
+    });
+  }
+</script>
