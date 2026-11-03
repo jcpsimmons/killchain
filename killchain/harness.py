@@ -39,7 +39,7 @@ from killchain.contract import Contract, ContractError
 
 
 def log(msg: str) -> None:
-    print(f"[harness] {msg}", flush=True)
+    print(f"[killchain] {msg}", flush=True)
 
 
 #: Everything that means "your setup can't run this", as opposed to a harness
@@ -54,8 +54,8 @@ FAILURES = (
 
 def fail(msg: str) -> None:
     """Print a setup failure and exit 1 without a traceback."""
-    print(f"\n[harness] cannot continue: {msg}", file=sys.stderr, flush=True)
-    print("[harness] run `killchain --doctor` to check config, keys and the frontier agent.",
+    print(f"\n[killchain] cannot continue: {msg}", file=sys.stderr, flush=True)
+    print("[killchain] run `killchain --doctor` to check config, keys and the frontier agent.",
           file=sys.stderr, flush=True)
     raise SystemExit(1)
 

@@ -47,7 +47,12 @@ def run(cfg: dict) -> int:
         cp = paths.resolve_config(None)
         checks.append(Check("config", OK, str(cp)))
     except SystemExit as e:
-        checks.append(Check("config", FAIL, str(e), "run: killchain doctor --write-config"))
+        # Config normally auto-seeds on first run, so this only fires when
+        # --config or $KILLCHAIN_CONFIG points somewhere wrong. Creating a file
+        # at the user's path silently would be the wrong fix; say how to reset.
+        checks.append(Check("config", FAIL, str(e),
+                            "unset $KILLCHAIN_CONFIG (or fix --config), or run "
+                            "`killchain --config <path>` once that file exists"))
 
     # --- frontier agent
     backend = cfg.get("frontier", {}).get("backend", "claude")
