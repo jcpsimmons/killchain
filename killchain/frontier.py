@@ -2,6 +2,9 @@
 directory only, with the public brief and generated stubs. The agent is free
 to dispatch to subagents in its own family; that is its business.
 
+The private tree is kept out of the child's environment and cwd. It is a
+convention rather than a jail: the agent runs with permissions skipped.
+
 Backends: claude (Claude Code CLI), codex (OpenAI Codex CLI), fake.
 """
 from __future__ import annotations
@@ -30,7 +33,7 @@ def _clean_env(private_root: Path) -> dict:
 def run(cfg: dict, prompt: str, public_dir: Path, private_root: Path, log: Path) -> str:
     backend = cfg.get("backend", "claude")
     if backend == "fake":
-        from fakes import fake_frontier
+        from killchain.fakes import fake_frontier
         return fake_frontier(prompt, public_dir)
     if backend == "claude":
         exe = shutil.which("claude") or "claude"

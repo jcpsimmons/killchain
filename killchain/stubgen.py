@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from contract import Contract, Interface
+from killchain.contract import Contract, Interface
 
 
 def write_private_fixtures(c: Contract, path: Path) -> None:

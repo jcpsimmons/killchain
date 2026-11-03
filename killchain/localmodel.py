@@ -34,7 +34,7 @@ def api_key(cfg: dict) -> str:
 def chat(cfg: dict, messages: list[dict], temperature: float = 0.2,
          max_tokens: int = 8192) -> str:
     if cfg.get("base_url") == "fake":
-        from fakes import fake_local
+        from killchain.fakes import fake_local
         return fake_local(messages)
     url = cfg["base_url"].rstrip("/") + "/chat/completions"
     body = {

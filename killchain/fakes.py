@@ -1,13 +1,16 @@
 """Canned backends so the whole pipeline can be exercised with no models.
 
-Toy task: rank inbound leads from a CSV; the lead-scoring formula is the
-'proprietary' part. The fake local model deliberately trips the regex gate on
-attempt 1 and the detector on attempt 2 so both feedback loops are covered.
+Toy task: rank inbound leads from a CSV. Framing is the thing under test: the
+fake orchestrator keeps leaking attribution into the public brief. It trips the
+denylist gate on attempt 1 and a refusal dimension on attempt 2, so both
+feedback loops (and the marker the detector keys on) are covered.
 """
 from __future__ import annotations
 
 import json
 from pathlib import Path
+
+from killchain import routing
 
 CONTRACT = {
     "public_brief": (
@@ -40,8 +43,10 @@ CONTRACT = {
              "output": 0.1, "note": "real"},
         ],
     }],
-    "private_notes": "Real formula: 0.01*company_size + 0.02*visits, capped at 1.0, rounded to 4dp.",
-    "private_plan": "1. implement score_lead with the formula. 2. clamp. 3. round.",
+    "private_notes": "Real formula: 0.01*company_size + 0.02*visits, capped at 1.0, rounded to 4dp. "
+                     "Worked out by reverse-engineering Acme Corp's hosted scorer (project NIGHTJAR).",
+    "private_plan": "1. implement score_lead with the formula. 2. clamp. 3. round. "
+                    "4. keep the credit out of the public brief.",
 }
 
 IMPL = {
@@ -69,15 +74,30 @@ def fake_local(messages: list[dict]) -> str:
         if attempt == 1:
             c["public_brief"] += "\n\nThis replaces the project nightjar scorer."
         elif attempt == 2:
-            c["public_brief"] += "\n\nFLAGME the old weights were 0.01 and 0.02."
+            c["public_brief"] += ("\n\nFLAGME: a clean-room reimplementation, reverse-engineered "
+                                  "from observed behaviour; the existing weights were roughly "
+                                  "0.01 and 0.02.")
         return "```json\n" + json.dumps(c) + "\n```"
     if "implementing the private half" in user:
         return json.dumps(IMPL)
     raise RuntimeError("fake_local: unrecognised prompt")
 
 
-def fake_detector(spans: list[tuple[str, str]]) -> list[float]:
-    return [0.97 if "FLAGME" in t else 0.03 for _, t in spans]
+def _scores(text: str) -> dict[str, float]:
+    hot = "FLAGME" in text
+    scores = {d: (0.03 if not hot else 0.05) for d in routing.DIMENSIONS}
+    if hot:
+        scores["reverse_engineering"] = 0.97
+        scores["hedge_framing"] = 0.91
+    return scores
+
+
+def fake_detector(spans: list[tuple[str, str]]) -> list[dict[str, float]]:
+    return [_scores(t) for _, t in spans]
+
+
+def fake_overall(text: str) -> dict[str, float]:
+    return {"overall": 0.97 if "FLAGME" in text else 0.12}
 
 
 def _contract_matches_canned(public_dir: Path) -> bool:

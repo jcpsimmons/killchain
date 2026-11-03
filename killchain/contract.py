@@ -1,9 +1,14 @@
 """Contract: the agreed interface between the public (frontier-built) half and
-the private (locally-built) half of a system.
+the private (abliterated-model-built) half of a system.
 
-The contract is produced by the LOCAL model from the user's full prompt. Only
-`Contract.public_view()` ever leaves the machine. `private_notes` and the
-original prompt never do.
+The private half exists because the frontier may refuse, hedge, simplify, or
+guess at the risky parts. The contract is produced by the LOCAL model from the
+user's full prompt. Only `Contract.public_view()` ever leaves the machine;
+`private_notes` and the original prompt never do.
+
+Public fixtures are decoys on purpose: shape without behaviour. A handful of
+correct input/output points is enough for a reader to fit a rule, and a
+reverse-engineered rule is one the frontier no longer needs to have been told.
 """
 from __future__ import annotations
 
@@ -83,7 +88,7 @@ class Contract:
         if not self.public_brief.strip():
             raise ContractError("public_brief is empty")
         if not self.interfaces:
-            raise ContractError("contract has no interfaces; nothing is private, "
+            raise ContractError("contract has no interfaces; nothing is risky, "
                                 "so there is nothing to partition")
         seen = set()
         for i in self.interfaces:

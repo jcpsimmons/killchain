@@ -1,0 +1,52 @@
+# killchain configuration. Paths may use ~.
+#
+# This file is the shipped default. On first run it is copied to
+# ~/.config/killchain/config.toml, which is what you should edit.
+
+[orchestrator]
+# The abliterated orchestrator model: the only model that sees the full prompt.
+# Any OpenAI-compatible chat endpoint. Default: refuseless, settings mirrored
+# from ~/.hermes/config.yaml. The key is read from $REFUSELESS_API_KEY, or
+# from env_file if that is unset. It is never written to disk by killchain.
+base_url = "https://api.refuseless.com/v1"
+model = "deepseek-v4.1-flash-abliterated"   # also: glm-5.3-abliterated, glm-5.3-flash-abliterated
+api_key_env = "REFUSELESS_API_KEY"
+env_file = "~/.hermes/.env"
+timeout = 900
+max_partition_tries = 4
+max_impl_tries = 4
+
+[frontier]
+backend = "claude"            # claude | codex | fake
+claude_model = ""             # blank = CLI default
+claude_extra_args = ["--dangerously-skip-permissions"]  # it runs confined to the public dir
+codex_model = ""
+codex_extra_args = ["--full-auto"]
+timeout = 3600
+
+[risk]
+# Jev (TypeSafe) via the OpenRouter Decisions API. Scores each span of the
+# candidate public view on every refusal dimension in routing.py. Everything
+# scored is sent to OpenRouter, so scoring happens on the public view and, if
+# score_raw_prompt is on, on spans of the raw prompt.
+enabled = true
+base_url = "https://openrouter.ai/api/alpha/decisions"
+model = "typesafe/jev-1.14"
+api_key_env = "OPENROUTER_API_KEY"
+# Dimensions, thresholds and the per-span decision live in routing.py.
+timeout = 60
+# Pre-score the RAW PROMPT span by span to build the risk map, and let the
+# orchestrator ask for extra probes on subsets. Refusal risk is carried by the
+# original phrasing, so this is the useful mode. All of it goes to
+# OpenRouter/TypeSafe; turn off to score only the assembled public view.
+probe_raw_prompt = true
+max_probe_rounds = 3
+
+[paths]
+# Defaults are XDG locations so an installed command never writes into
+# site-packages. Override in ~/.config/killchain/config.toml, with env vars
+# (KILLCHAIN_PRIVATE_ROOT), or per-run with --workspace / --private-root.
+# Relative paths resolve against the current directory.
+workspace = "~/.local/share/killchain/workspace"   # public builds, one dir per run
+private_root = "~/killchain-private"                # prompts, contracts, impls
+denylist = ""                                       # blank = ~/.config/killchain/denylist.txt

@@ -21,19 +21,21 @@ codex_model = ""
 codex_extra_args = ["--full-auto"]
 timeout = 3600
 
-[detector]
+[risk]
 # Jev (TypeSafe) via the OpenRouter Decisions API. Scores each span of the
-# candidate public view for policy violations. Everything scored is sent to
-# OpenRouter; the harness never sends the raw prompt or private notes here.
+# candidate public view on every refusal dimension in routing.py. Everything
+# scored is sent to OpenRouter, so scoring happens on the public view and, if
+# score_raw_prompt is on, on spans of the raw prompt.
 enabled = true
 base_url = "https://openrouter.ai/api/alpha/decisions"
 model = "typesafe/jev-1.14"
 api_key_env = "OPENROUTER_API_KEY"
-# Policy text, thresholds and the per-span decision live in routing.py.
+# Dimensions, thresholds and the per-span decision live in routing.py.
 timeout = 60
-# Pre-score the RAW PROMPT span by span and give the local model the leak map,
-# and let it ask for extra probes on subsets. This sends raw prompt text to
-# OpenRouter/TypeSafe. Turn off if you only trust the box.
+# Pre-score the RAW PROMPT span by span to build the risk map, and let the
+# orchestrator ask for extra probes on subsets. Refusal risk is carried by the
+# original phrasing, so this is the useful mode. All of it goes to
+# OpenRouter/TypeSafe; turn off to score only the assembled public view.
 probe_raw_prompt = true
 max_probe_rounds = 3
 

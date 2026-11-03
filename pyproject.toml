@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "killchain"
+version = "0.1.0"
+description = "Split a build so a frontier coding agent never sees the risky half."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Josh Simmons" }]
+keywords = ["agents", "claude-code", "codex", "partitioning", "codegen"]
+classifiers = [
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Code Generators",
+]
+# Deliberately empty: killchain runs on the standard library alone. Shipping
+# zero dependencies is the reason `uvx killchain` is a clean one-liner.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+killchain = "killchain.harness:main"
+
+[project.urls]
+Homepage = "https://github.com/simsies/killchain"
+
+# `packages` already sweeps in prompts/ and config.toml; force-include would
+# add them a second time and hatchling rejects the duplicate.
+[tool.hatch.build.targets.wheel]
+packages = ["killchain"]
+
+[tool.hatch.build.targets.sdist]
+include = ["killchain", "README.md", "pyproject.toml"]
