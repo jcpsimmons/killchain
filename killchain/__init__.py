@@ -11,11 +11,20 @@ def _version() -> str:
 
     A hardcoded string here drifts from pyproject.toml, and a drifted version
     makes PyPI reject the upload with "file already exists" on every retry.
-    Falls back to "0+unknown" when the package is not installed.
+    Falls back to pyproject.toml when running from an uninstalled source tree,
+    and to "0+unknown" if neither is available.
     """
     try:
         from importlib.metadata import version
         return version("killchain")
+    except Exception:
+        pass
+    try:
+        import tomllib
+        from pathlib import Path
+
+        pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+        return tomllib.loads(pyproject.read_text())["project"]["version"]
     except Exception:
         return "0+unknown"
 
