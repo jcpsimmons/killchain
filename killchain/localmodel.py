@@ -10,9 +10,9 @@ from __future__ import annotations
 import json
 import os
 import re
-from pathlib import Path
-import urllib.request
 import urllib.error
+import urllib.request
+from pathlib import Path
 
 
 class LocalModelError(RuntimeError):

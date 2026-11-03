@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
 IDENT = re.compile(r"^[a-z_][a-z0-9_]*$")
@@ -118,7 +118,8 @@ class Contract:
                             f"{kind} {n} of {i.module}.{i.function} inputs mismatch params: "
                             f"extra={sorted(extra)} missing={sorted(missing)}")
                     try:
-                        json.dumps(f.inputs); json.dumps(f.output)
+                        json.dumps(f.inputs)
+                        json.dumps(f.output)
                     except TypeError as e:
                         raise ContractError(f"{kind} {n} of {i.function} not JSON: {e}")
             real = {json.dumps([f.inputs, f.output], sort_keys=True) for f in i.private_fixtures}

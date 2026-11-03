@@ -34,7 +34,9 @@ def workspace() -> Path:
     """The per-project run directory, creating it (gitignored) on first use."""
     root = find_project_root()
     if root is None:
-        return data_dir() / "workspace"
+        ws = data_dir() / "workspace"
+        ws.mkdir(parents=True, exist_ok=True)
+        return ws
     ws = root / ".killchain" / "workspace"
     ws.mkdir(parents=True, exist_ok=True)
     ignore = root / ".gitignore"
@@ -254,6 +256,10 @@ def resolve_config(explicit: str | None) -> Path:
 def load_toml(path: Path) -> dict:
     try:
         return tomllib.loads(path.read_text())
+    except FileNotFoundError:
+        raise SystemExit(f"no such config file: {path}") from None
+    except OSError as e:
+        raise SystemExit(f"cannot read {path}: {e}") from e
     except tomllib.TOMLDecodeError as e:
         raise SystemExit(f"{path} is not valid TOML: {e}")
 

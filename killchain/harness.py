@@ -64,6 +64,11 @@ def load_cfg(path: Path, overrides: argparse.Namespace) -> dict:
     # a project); a path = exactly that path.
     raw_ws = str(cfg["paths"].get("workspace") or "").strip()
     cfg["paths"]["workspace"] = paths.workspace() if not raw_ws else _abs(raw_ws)
+    # Precedence: --private-root, then $KILLCHAIN_PRIVATE_ROOT, then the file.
+    # The env var is documented in README and config.toml, so it has to win
+    # over the config file's own default or it does nothing.
+    if not overrides.private_root and os.environ.get("KILLCHAIN_PRIVATE_ROOT"):
+        cfg["paths"]["private_root"] = os.environ["KILLCHAIN_PRIVATE_ROOT"]
     cfg["paths"]["private_root"] = _abs(cfg["paths"]["private_root"])
     return cfg
 
@@ -282,6 +287,7 @@ def implement_private(cfg: dict, user_prompt: str, c: Contract, public: Path, pr
 # ---------------------------------------------------------------- main
 def main() -> None:
     ap = argparse.ArgumentParser(
+        prog="killchain",
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Docs and war stories: https://youtube.com/@drjoshcsimmons",
@@ -297,7 +303,8 @@ def main() -> None:
                     help="override risk detector base_url ('fake' for canned)")
     ap.add_argument("--no-detector", "--no-risk", dest="no_detector", action="store_true",
                     help="skip model scoring entirely (gate only)")
-    ap.add_argument("--private-root"); ap.add_argument("--workspace")
+    ap.add_argument("--private-root")
+    ap.add_argument("--workspace")
     ap.add_argument("--yes", action="store_true", help="skip the outbound review prompt")
     ap.add_argument("--skip-frontier", action="store_true", help="public/ already built; go to private step")
     ap.add_argument("--skip-private", action="store_true", help="stop after the frontier build")
