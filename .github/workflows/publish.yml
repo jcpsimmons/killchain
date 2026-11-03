@@ -9,7 +9,30 @@ permissions:
   contents: read
 
 jobs:
+  # Tests gate the publish. A green release button is not evidence the wheel
+  # works, and a bad version on PyPI cannot be reused later.
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Lint
+        run: python -m ruff check killchain tests
+      - name: Test
+        run: python -m pytest
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +47,20 @@ jobs:
         run: |
           python -m pip install --upgrade twine
           python -m twine check dist/*
+      # Install the built wheel into a clean venv and run the CLI from it.
+      # This is the step that catches packaging mistakes the source tree
+      # hides: missing data files, a broken entry point, a missing prompt.
+      - name: Smoke-test the wheel
+        run: |
+          python -m venv /tmp/kc-smoke
+          /tmp/kc-smoke/bin/pip install --quiet dist/*.whl
+          /tmp/kc-smoke/bin/killchain --version
+          /tmp/kc-smoke/bin/killchain --help > /dev/null
+          export HOME=/tmp/kc-smoke-home
+          mkdir -p "$HOME"
+          /tmp/kc-smoke/bin/killchain --doctor || true
+          /tmp/kc-smoke/bin/killchain "Write a function that adds two integers." \
+            --frontier fake --orch-url fake --no-detector --yes
       - uses: actions/upload-artifact@v4
         with:
           name: dist

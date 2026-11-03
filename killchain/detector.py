@@ -18,8 +18,8 @@ from __future__ import annotations
 import json
 import os
 import re
-import urllib.request
 import urllib.error
+import urllib.request
 from dataclasses import dataclass, field
 
 from killchain import routing
@@ -136,7 +136,7 @@ def score_spans(cfg: dict, spans: list[tuple[str, str]],
     """Score each span against every dimension, then let routing.classify() rule."""
     if cfg.get("base_url") == "fake":
         from killchain.fakes import fake_detector
-        return [_verdict(l, t, s) for (l, t), s in zip(spans, fake_detector(spans))]
+        return [_verdict(lbl, txt, sc) for (lbl, txt), sc in zip(spans, fake_detector(spans))]
     qs = _questions(risky_terms)
     out: list[RiskVerdict] = []
     for label, text in spans:

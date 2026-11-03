@@ -202,6 +202,20 @@ private run dir (`private_fixtures.json`), and drive `tests/test_contracts.py`
 in real mode via `HARNESS_FIXTURES`. Passing there is the integration proof.
 The harness rejects a public fixture that equals a private one.
 
+## Developing
+
+```bash
+uv run --extra dev pytest
+uv run --extra dev ruff check killchain tests
+```
+
+Tests never call a model. The CLI tests pass `--orch-url fake --no-detector`
+and a fake frontier agent, so the whole pipeline runs offline in about two
+seconds. Publishing is gated on them: the workflow runs the suite on Python
+3.11, 3.12 and 3.13, builds the wheel, then installs that wheel into a clean
+venv and does a partition with it. If the built artifact cannot do a run, it
+does not reach PyPI.
+
 ## Limits
 
 Jev predicts refusal; it does not measure it. Refusals are stochastic and
