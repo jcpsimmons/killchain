@@ -32,7 +32,7 @@ uvx killchain "your task"          # zero-install trial, no venv needed
 From a checkout, before it is on an index:
 
 ```bash
-uv tool install git+https://github.com/simsies/killchain
+uv tool install git+https://github.com/jcpsimmons/killchain
 # or, for development:
 uv venv && uv pip install -e ".[dev]"
 python harness.py --version
@@ -80,7 +80,7 @@ prompt ─► orchestrator ─► contract.json  (brief + interfaces + decoy fix
 
 ## Where to edit the routing
 
-**[killchain/routing.py](killchain/routing.py)** is the one file that decides what the frontier is
+**[killchain/routing.py](https://github.com/jcpsimmons/killchain/blob/main/killchain/routing.py)** is the one file that decides what the frontier is
 allowed to see. Everything else is plumbing that imports from it:
 
 | In routing.py      | What it controls                                                      |
