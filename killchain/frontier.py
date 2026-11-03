@@ -36,20 +36,26 @@ def run(cfg: dict, prompt: str, public_dir: Path, private_root: Path, log: Path)
         from killchain.fakes import fake_frontier
         return fake_frontier(prompt, public_dir)
     if backend == "claude":
-        exe = shutil.which("claude") or "claude"
-        cmd = [exe, "-p", prompt, "--output-format", "text"]
+        exe = shutil.which("claude")
+        cmd = [exe or "claude", "-p", prompt, "--output-format", "text"]
         if cfg.get("claude_model"):
             cmd += ["--model", cfg["claude_model"]]
         cmd += list(cfg.get("claude_extra_args", []))
     elif backend == "codex":
-        exe = shutil.which("codex") or "codex"
-        cmd = [exe, "exec", "-C", str(public_dir)]
+        exe = shutil.which("codex")
+        cmd = [exe or "codex", "exec", "-C", str(public_dir)]
         if cfg.get("codex_model"):
             cmd += ["-m", cfg["codex_model"]]
         cmd += list(cfg.get("codex_extra_args", []))
         cmd += [prompt]
     else:
         raise FrontierError(f"unknown frontier backend {backend!r}")
+
+    if not exe:
+        raise FrontierError(
+            f"frontier backend {backend!r} is not installed ({backend} is not on PATH). "
+            f"Install it, or pick a different agent with --frontier."
+        )
 
     with log.open("w") as lf:
         lf.write(f"$ {' '.join(cmd[:3])} ... (cwd={public_dir})\n\n")

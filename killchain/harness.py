@@ -42,6 +42,24 @@ def log(msg: str) -> None:
     print(f"[harness] {msg}", flush=True)
 
 
+#: Everything that means "your setup can't run this", as opposed to a harness
+#: bug. These get one readable line and a hint, not a stack trace.
+FAILURES = (
+    localmodel.LocalModelError,
+    detector.DetectorError,
+    frontier.FrontierError,
+    ContractError,
+)
+
+
+def fail(msg: str) -> None:
+    """Print a setup failure and exit 1 without a traceback."""
+    print(f"\n[harness] cannot continue: {msg}", file=sys.stderr, flush=True)
+    print("[harness] run `killchain --doctor` to check config, keys and the frontier agent.",
+          file=sys.stderr, flush=True)
+    raise SystemExit(1)
+
+
 def load_cfg(path: Path, overrides: argparse.Namespace) -> dict:
     cfg = tomllib.loads(path.read_text())
     if overrides.frontier:
@@ -106,18 +124,30 @@ def partition(cfg: dict, user_prompt: str, denylist, priv: Path) -> Contract:
                 {"role": "user", "content": user_prompt}]
     tries = int(cfg["orchestrator"].get("max_partition_tries", 4))
     max_probes = int(det.get("max_probe_rounds", 3))
-    attempt = probes = 0
-    while attempt < tries:
-        attempt += 1
-        log(f"partition attempt {attempt}/{tries} (orchestrator)")
+    # A probe round asks a question instead of returning a contract, so it must
+    # not spend one of the partition tries. Track the two counters separately:
+    # rewinding `attempt` made the loop relog the same attempt number and let a
+    # probe reply overwrite partition.attempt1.txt.
+    attempts = probes = replies = 0
+    announced = 0
+    while attempts < tries:
+        attempts += 1
+        # A probe round rewinds `attempts`, so the next pass around the loop
+        # re-derives the same number. Announce each number once.
+        if attempts > announced:
+            log(f"partition attempt {attempts}/{tries} (orchestrator)")
+            announced = attempts
         reply = localmodel.chat(cfg["orchestrator"], messages)
-        (priv / f"partition.attempt{attempt}.txt").write_text(reply)
+        replies += 1
+        (priv / f"partition.attempt{replies}.txt").write_text(reply)
         try:
             data = localmodel.extract_json(reply)
             if isinstance(data.get("probes"), list) and "public_brief" not in data:
-                attempt -= 1  # probes do not spend a partition attempt
                 probes += 1
+                attempts -= 1  # probes do not spend a partition attempt
                 if not det_on or not det.get("probe_raw_prompt", False) or probes > max_probes:
+                    log(f"probe round {probes}/{max_probes}: orchestrator asked a question; "
+                        f"probing is off, telling it to write the contract")
                     answer = "PROBE RESULTS: probing is not available. Reply with the contract."
                 else:
                     spans = [(f"probe[{n}]", str(t)) for n, t in enumerate(data["probes"])]
@@ -153,14 +183,14 @@ def partition(cfg: dict, user_prompt: str, denylist, priv: Path) -> Contract:
             # when it passes, because it is what a refusal actually keys on.
             overall = detector.score_whole_view(det, c.public_view(), terms)
             verdicts.append(overall)
-            (priv / f"detector.attempt{attempt}.json").write_text(
+            (priv / f"detector.attempt{attempts}.json").write_text(
                 json.dumps([v.__dict__ for v in verdicts], indent=2))
             if overall.flagged:
                 log(detector.describe([overall]))
             if any(v.flagged for v in verdicts):
                 problems.append(detector.describe(verdicts))
         if not problems:
-            report = {"attempt": attempt,
+            report = {"attempt": attempts,
                       "spans": [v.__dict__ for v in verdicts],
                       "hints": [h.__dict__ for h in gate.hints(c.public_text())]}
             (priv / "riskreport.json").write_text(json.dumps(report, indent=2))
@@ -318,13 +348,26 @@ def main() -> None:
         cfg = tomllib.loads(paths.resolve_config(a.config).read_text())
         raise SystemExit(doctor.run(cfg))
 
+    try:
+        _run(a)
+    except FAILURES as e:
+        fail(str(e))
+
+
+def _run(a: argparse.Namespace) -> None:
+    """Everything main() does once the arguments are parsed.
+
+    Split out so that every configuration and network failure lands in one
+    handler. A stack trace at this layer means "you misconfigured something",
+    which reads as "the tool is broken" when the real answer is one variable.
+    """
     cfg = load_cfg(paths.resolve_config(a.config), a)
     if a.file:
         user_prompt = Path(a.file).read_text()
     elif a.prompt:
         user_prompt = a.prompt
     else:
-        ap.error("give a prompt or -f FILE")
+        raise SystemExit("give a prompt or -f FILE")
 
     run_id = a.run_id or dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     public = cfg["paths"]["workspace"] / run_id / "public"
@@ -375,7 +418,16 @@ def main() -> None:
     log(f"public half:  {public}")
     log(f"private half: {priv / 'private_impl'}")
     log(f"risk report:  {priv / 'riskreport.json'}")
-    log(f"run it:       cd {public} && HARNESS_MODE=real PYTHONPATH={priv} python -m app.<entry>")
+    log(f"run it:       cd {public} && HARNESS_MODE=real "
+        f"HARNESS_FIXTURES={priv / 'private_fixtures.json'} "
+        f"PYTHONPATH={priv} python -m app.<entry>")
+    log(f"test it:      cd {public} && HARNESS_MODE=real "
+        f"HARNESS_FIXTURES={priv / 'private_fixtures.json'} "
+        f"PYTHONPATH={priv} python -m unittest discover -s tests -t .")
+    if not cfg["risk"].get("enabled", True):
+        log("NOTE: risk scoring was DISABLED for this run (--no-detector). "
+            "The regex gate ran; the refusal dimensions were NOT scored, so this "
+            "run is not evidence about refusal risk.")
     if not ok:
         raise SystemExit(1)
 

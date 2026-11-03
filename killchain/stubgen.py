@@ -65,7 +65,13 @@ def _load():
     if os.environ.get("HARNESS_MODE", "stub") == "real":
         p = os.environ.get("HARNESS_FIXTURES")
         if not p:
-            raise RuntimeError("HARNESS_MODE=real needs HARNESS_FIXTURES=<private fixtures json>")
+            raise RuntimeError(
+                "HARNESS_MODE=real needs HARNESS_FIXTURES=<private fixtures json>\\n"
+                "  The file is private_fixtures.json in the run directory, next to "
+                "private_impl/.\\n"
+                "  Example: HARNESS_MODE=real HARNESS_FIXTURES=../private_fixtures.json "
+                "PYTHONPATH=.. python -m unittest tests.test_contracts"
+            )
         return json.loads(pathlib.Path(p).read_text())
     here = pathlib.Path(__file__).resolve().parent.parent
     return json.loads((here / "contracts" / "_fixtures.json").read_text())
