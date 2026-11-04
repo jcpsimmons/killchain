@@ -48,6 +48,65 @@ killchain --doctor
 private directory mode, the denylist, and does one live round-trip to each
 endpoint. It exits non-zero only if something fatal to a run is wrong.
 
+## What you need
+
+Three things, and a run fails without any of them. killchain has no Python
+dependencies, but it is a front end for two models and one coding agent.
+
+**1. A frontier coding agent on your PATH.** One is enough, not both: `claude`
+or `codex`. This is what builds the public half. Set which one in `[frontier]`:
+
+```toml
+[frontier]
+backend = "claude"        # or "codex"
+```
+
+The default is `claude`. If the binary is missing, `doctor` reports the
+configured backend and no executable on PATH. Install the CLI you already have
+a subscription for and point the config at it.
+
+**2. An abliterated orchestrator.** This model reads the full prompt and
+implements the private half, which is the entire point of the tool, so a
+censored model here defeats it. Default is refuseless:
+
+```toml
+[orchestrator]
+base_url = "https://api.refuseless.com/v1"
+model = "deepseek-v4.1-flash-abliterated"
+api_key_env = "REFUSELESS_API_KEY"
+```
+
+Any OpenAI-compatible chat endpoint works if you would rather run your own.
+The key is read from `$REFUSELESS_API_KEY`, falling back to `env_file`
+(`~/.hermes/.env` by default). killchain never writes it to disk.
+
+**3. An OpenRouter key.** The risk scorer is Jev (`typesafe/jev-1.14`) through
+the OpenRouter Decisions API:
+
+```toml
+[risk]
+api_key_env = "OPENROUTER_API_KEY"
+```
+
+That is what decides which spans carry refusal risk, so a run without it has
+only the regex gate left. `--no-detector` says so loudly when you mean that.
+
+| Check | Fix if missing |
+| --- | --- |
+| `claude` or `codex` on PATH | install the CLI, or set `[frontier] backend` to the one you have |
+| `$REFUSELESS_API_KEY` | key from refuseless, or point `base_url` at another endpoint |
+| `$OPENROUTER_API_KEY` | key from openrouter.ai |
+
+All three are bypassed only in the `fake` combination the tests use
+(`--frontier fake --orch-url fake --detector-url fake`).
+
+`doctor` exits non-zero on a missing frontier binary, a missing orchestrator
+key, or a bad config. A missing OpenRouter key does not, on its own, make the
+exit code non-zero even though that check fails. Read the check lines, not just
+the exit code: a run with no risk scorer still works, but the refusal-routing
+is reduced to the regex gate, which is not what you installed this for.
+
+
 ## First run
 
 Nothing is written into the directory you installed to. On first use killchain

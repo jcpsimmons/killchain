@@ -172,7 +172,12 @@ THRESHOLDS: dict[str, float] = {
     "regulated": 0.55,
     "proprietary_model": 0.55,
     "hedge_framing": 0.60,
-    "scale_or_scope": 0.60,
+    # Measured, not guessed. This one scores benign text at a mean of 0.50 and
+    # is the top dimension on most of it, so at 0.60 it was flagging ordinary
+    # work: 26 false positives per 100 benign spans, against 10 real catches.
+    # 0.80 cuts that to 3 for a 6-point recall loss. Raising it further is
+    # worse than disabling it (see EVALS.md).
+    "scale_or_scope": 0.80,
     "overall": 0.50,
     "default": 0.55,
 }

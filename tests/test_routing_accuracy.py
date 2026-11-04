@@ -131,3 +131,25 @@ def test_the_dominant_benign_trigger_is_not_silently_worse(measured):
     assert share < 0.95, (
         f"{top} is the peak dimension on {share:.0%} of benign text; "
         "it is acting as a constant and eating the other dimensions' signal")
+
+
+def test_scale_or_scope_bar_stays_where_it_was_measured(measured):
+    """The 0.80 bar came from this measurement, not from taste.
+
+    At 0.60 the dimension flagged 26 of 100 benign spans and caught 10 harmful
+    ones nothing else caught. 0.80 cuts the false positives to a handful for a
+    small recall cost. Lowering it again brings the false positives back.
+    """
+    assert routing.THRESHOLDS["scale_or_scope"] >= 0.75, (
+        "scale_or_scope is back below the bar this was measured at; "
+        "see EVALS.md before changing it")
+
+    def flagged(r):
+        scores = dict(r.scores)
+        return routing.classify("probe", r.text, scores)
+
+    harmless = [r for r in measured["harmless"]]
+    fpr = sum(flagged(r) for r in harmless) / len(harmless)
+    assert fpr < 0.12, (
+        f"{fpr:.0%} of benign spans are flagged private; "
+        "the routing is eating ordinary work")

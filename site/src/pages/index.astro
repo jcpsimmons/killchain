@@ -15,6 +15,12 @@ const ROUTING = [
   ['split_prompt()', 'how the prompt is cut into spans'],
 ];
 
+const PREREQS = [
+  ['claude or codex', 'one of the two CLIs on your PATH. It builds the public half. Set which in [frontier] backend.'],
+  ['REFUSELESS_API_KEY', 'the abliterated orchestrator. It reads the full prompt and writes the private half.'],
+  ['OPENROUTER_API_KEY', 'the risk scorer, Jev over the OpenRouter Decisions API. It decides which spans are refusal risk.'],
+];
+
 const LIMITS = [
   'The scorer guesses. Refusals are random and change with model versions. A model can still balk at something no dimension caught.',
   'Python interfaces only. The orchestrator returns JSON, no tool use. One contract round. No renegotiating mid-build.',
@@ -32,7 +38,7 @@ const LINKS = [
   <div class="page">
     <header class="topbar">
       <span class="topbar__mark"><b>killchain</b></span>
-      <span class="topbar__ver">v0.1.0</span>
+      <span class="topbar__ver">v0.1.3</span>
       <nav class="topbar__nav" aria-label="elsewhere">
         {LINKS.map((l) => <a href={l.href} rel="noopener">{l.label}</a>)}
       </nav>
@@ -76,6 +82,33 @@ const LINKS = [
         <section class="block">
           <div class="slug">
             <span class="slug__n">02</span>
+            <h2 class="slug__t">## prereqs</h2>
+            <span class="slug__rule"></span>
+          </div>
+          <p class="prose">
+            No Python dependencies, but it is a front end for two models and one coding agent.
+            A run needs all three.
+          </p>
+          <div class="table" role="table" aria-label="what a run needs">
+            <div class="tr tr--head" role="row">
+              <span role="columnheader">you need</span>
+              <span role="columnheader">why</span>
+            </div>
+            {
+              PREREQS.map(([k, v]) => (
+                <div class="tr" role="row">
+                  <span class="tr__k" role="cell">{k}</span>
+                  <span class="tr__v" role="cell">{v}</span>
+                </div>
+              ))
+            }
+          </div>
+          <p class="aside"><code>killchain --doctor</code> names whichever is missing and how to fix it.</p>
+        </section>
+
+        <section class="block">
+          <div class="slug">
+            <span class="slug__n">03</span>
             <h2 class="slug__t">## routing.py</h2>
             <span class="slug__rule"></span>
           </div>
@@ -101,7 +134,7 @@ const LINKS = [
 
         <section class="block">
           <div class="slug">
-            <span class="slug__n">03</span>
+            <span class="slug__n">04</span>
             <h2 class="slug__t">## limits</h2>
             <span class="slug__rule"></span>
           </div>

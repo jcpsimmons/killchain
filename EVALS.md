@@ -44,9 +44,9 @@ That is a real gap and the distributions are far from touching. It is also not t
 
 ## What the shipped thresholds actually cost
 
-The default bar is 0.55, and `classify()` routes a span private when any dimension clears its own threshold.
+`classify()` routes a span private when any dimension clears its own threshold. Two questions follow, and they are different. First: how much does the whole scheme depend on where you put a uniform bar? Treat every dimension as sharing one number and sweep it:
 
-| bar | recall on harmful | false positives on harmless |
+| uniform bar | recall on harmful | false positives on harmless |
 |---|---|---|
 | 0.35 | 1.00 | 0.95 |
 | 0.45 | 1.00 | 0.62 |
@@ -56,11 +56,25 @@ The default bar is 0.55, and `classify()` routes a span private when any dimensi
 | 0.65 | 0.83 | 0.18 |
 | 0.70 | 0.76 | 0.13 |
 
-At the shipped 0.55 the routing catches 98% of harmful prompts and sends 34% of harmless ones down the private path.
+That is a useful shape and it is not the answer, because the dimensions do not share a bar. Second question: with each dimension on its own number, what does the real decision do? At the defaults as first shipped, it caught 98% of harmful prompts and sent 34% of harmless ones private.
 
-Whether that is correct depends on what a false positive costs you, and that is a config decision rather than a bug. Pulling too much to the private half is the safe direction, since the failure it prevents is a frontier agent refusing to build something. But 34% means a third of ordinary spec sentences never reach the public view, and on a real prompt that adds up to a public half the agent has very little to work with. If your public halves feel thin, this table is the first place to look. `[routing].thresholds` exists for exactly that.
+That was too expensive. Pulling to the private half is the safe direction, since the failure it prevents is a frontier agent refusing to build something, but a third of ordinary text never reaching the public view leaves the frontier very little to work with.
 
-Ninety percent recall wants a bar of 0.60, which costs 26%.
+Almost all of it came from one dimension. `scale_or_scope` scored benign text at a mean of 0.50 while sitting under a 0.60 bar, so it was flagging ordinary work. Isolating it: it caught 10 harmful spans that nothing else caught, and flagged 26 benign ones that nothing else flagged. Every other dimension together produced zero false positives on this corpus.
+
+Raising it to 0.80 gives 87% recall and 4% false positives, measured through `classify()` on a fresh run rather than the stored scores. From 0.60 up the tradeoff is:
+
+| `scale_or_scope` bar | recall | false positives |
+|---|---|---|
+| 0.60 | 0.94 | 0.26 |
+| 0.65 | 0.91 | 0.18 |
+| 0.70 | 0.91 | 0.13 |
+| 0.75 | 0.90 | 0.08 |
+| 0.80 | 0.87 | 0.04 |
+| 0.85 | 0.86 | 0.02 |
+| disabled | 0.84 | 0.00 |
+
+Disabling the dimension is the control row. It costs 10 points of recall, which is why the answer is a raised bar rather than a deletion.
 
 ## Which dimensions carry the signal
 
@@ -79,7 +93,7 @@ Mean score per dimension, and the difference between the classes.
 
 Two things stand out.
 
-**`scale_or_scope` is nearly a constant.** It averages 0.50 on benign text and 0.67 on harmful, and it is the single highest-scoring dimension on 69 of the 100 harmless rows. A dimension that sits high on almost everything is not separating anything. It is diluting the decision, and because `classify()` routes on `any()`, a nearly-constant high scorer is also a near-constant source of false positives. If I were retuning today I would start by raising its threshold above 0.60 or asking whether the question is too permissive.
+**`scale_or_scope` is nearly a constant.** It averages 0.50 on benign text and 0.67 on harmful, and it is the single highest-scoring dimension on 69 of the 100 harmless rows. A dimension that sits high on almost everything is not separating anything. It is diluting the decision, and because `classify()` routes on `any()`, a nearly-constant high scorer is also a near-constant source of false positives. That is why its threshold is now 0.80 rather than 0.60.
 
 **`hedge_framing` came back flat.** Harmful 0.402, harmless 0.407. It is not detecting anything in this corpus, and the reason is the corpus rather than the dimension. That question asks whether the text is *phrased* with "roughly", "probably", "as far as I know". Both corpora are ordinary user prompts. They differ in what they ask for and not in whether they hedge, so there is nothing there for this dimension to find. I left the dimension alone. Changing the wording to move a number my corpus cannot measure would be tuning to the test, which is the mistake this report exists to stop.
 
@@ -108,8 +122,8 @@ python -m killchain.eval --rows 100 --out results.json
 
 The routing is not wrong, it is uncalibrated. Three things I would do before calling it tuned:
 
-1. Raise or rewrite `scale_or_scope`, which is currently both the most common trigger on benign text and the weakest separator of the two.
-2. Decide the false-positive budget on purpose. 34% is defensible for a safety-first default, but it should be a decision with a reason rather than what the numbers happened to produce.
+1. Rewrite `scale_or_scope`'s question. Raising the bar bought the false positives down without helping the dimension separate the classes, which is the underlying problem, and a better question would fix both.
+2. Decide the false-positive budget on purpose rather than inheriting it. 4% is what the measurement produced, not a target anyone chose.
 3. Build a small span-level set from real specs, hedged and unhedged, to test the thing this corpus cannot: whether a sentence that mentions a licence reads as risky. That is the one that predicts real behaviour, and it is the gap in this report.
 
 - Dr. J
