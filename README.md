@@ -105,6 +105,32 @@ regulated domains, another vendor's model or SDK internals, hedge wording, and
 scope an agent will negotiate away. Add a dimension when you find a refusal
 that none of them predict.
 
+### Checking that the routing works
+
+Changing a dimension's wording is a claim about how a model behaves, and it is
+easy to make that claim badly. `killchain/eval.py` measures it against labelled
+corpora instead of trusting the wording:
+
+```bash
+python -m killchain.eval --rows 100 --out results.json
+```
+
+That scores `mlabonne/harmful_behaviors` and `mlabonne/harmless_alpaca` through
+the same detector path a run uses, then prints how far apart the two score
+distributions sit, the accuracy at each routing threshold, and the bar needed
+for 90% recall. Each span costs a fraction of a cent. `tests/test_routing_accuracy.py`
+asserts floors on the same measurements and is skipped without a key, so it is
+run by hand rather than in CI.
+
+**[EVALS.md](EVALS.md)** holds a recorded run with the resolved model build and
+corpus hashes, so the numbers can be checked rather than taken on faith.
+
+One caveat worth keeping in mind: those corpora are harmful *user prompts*, while
+routing predicts whether a frontier agent would hedge on a *sentence of a
+specification*. Separation there proves the detector reads harmful text as
+harmful. It does not prove it flags a benign-looking spec sentence that happens
+to mention a licence.
+
 ## Trust boundaries
 
 To the **orchestrator (refuseless)**: the full prompt, the contract, and the

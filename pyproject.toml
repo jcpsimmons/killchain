@@ -47,7 +47,7 @@ packages = ["killchain"]
 # of the package, and hatchling's VCS sweep ships it (the sdist went to 41
 # entries against a clean 22 when one existed). CI builds from a clean clone so
 # this only bites local releases, which is the worst way to find out.
-include = ["killchain", "README.md", "pyproject.toml"]
+include = ["killchain", "README.md", "EVALS.md", "pyproject.toml"]
 # The landing page is its own build (site/, Astro, deployed separately).
 exclude = ["/site"]
 
