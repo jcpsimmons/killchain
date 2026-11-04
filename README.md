@@ -1,11 +1,11 @@
 # killchain: refusal-first split build
 
-An abliterated orchestrator model (refuseless by default, settings mirrored
-from `~/.hermes/config.yaml`) is the front door. It is the only model that
-sees the full prompt. It splits the job into a **public half** (built by a
-frontier coding agent: Claude Code or Codex, which may fan out to its own
-subagents) and a **private half** (implemented by the orchestrator itself),
-joined by a contract.
+An abliterated orchestrator model ([refuseless](https://refuseless.com/?ref=1ei3kxnd)
+by default, settings mirrored from `~/.hermes/config.yaml`) is the front door.
+It is the only model that sees the full prompt. It splits the job into a
+**public half** (built by a frontier coding agent: Claude Code or Codex, which
+may fan out to its own subagents) and a **private half** (implemented by the
+orchestrator itself), joined by a contract.
 
 The partition rule is **refusal risk, nothing else**. Claude and Codex are good
 and fast, but they hedge, caveat, simplify, or refuse when a task looks
@@ -67,7 +67,7 @@ a subscription for and point the config at it.
 
 **2. An abliterated orchestrator.** This model reads the full prompt and
 implements the private half, which is the entire point of the tool, so a
-censored model here defeats it. Default is refuseless:
+censored model here defeats it. Default is [refuseless](https://refuseless.com/?ref=1ei3kxnd):
 
 ```toml
 [orchestrator]
@@ -76,9 +76,11 @@ model = "deepseek-v4.1-flash-abliterated"
 api_key_env = "REFUSELESS_API_KEY"
 ```
 
-Any OpenAI-compatible chat endpoint works if you would rather run your own.
-The key is read from `$REFUSELESS_API_KEY`, falling back to `env_file`
-(`~/.hermes/.env` by default). killchain never writes it to disk.
+Sign up at [refuseless.com/?ref=1ei3kxnd](https://refuseless.com/?ref=1ei3kxnd)
+to get the key. Any OpenAI-compatible chat endpoint works if you would rather
+run your own, so `base_url` is the only thing to change. The key is read from
+`$REFUSELESS_API_KEY`, falling back to `env_file` (`~/.hermes/.env` by
+default). killchain never writes it to disk.
 
 **3. An OpenRouter key.** The risk scorer is Jev (`typesafe/jev-1.14`) through
 the OpenRouter Decisions API:
@@ -94,7 +96,7 @@ only the regex gate left. `--no-detector` says so loudly when you mean that.
 | Check | Fix if missing |
 | --- | --- |
 | `claude` or `codex` on PATH | install the CLI, or set `[frontier] backend` to the one you have |
-| `$REFUSELESS_API_KEY` | key from refuseless, or point `base_url` at another endpoint |
+| `$REFUSELESS_API_KEY` | key from [refuseless](https://refuseless.com/?ref=1ei3kxnd), or point `base_url` at another endpoint |
 | `$OPENROUTER_API_KEY` | key from openrouter.ai |
 
 All three are bypassed only in the `fake` combination the tests use

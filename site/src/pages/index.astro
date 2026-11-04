@@ -17,7 +17,7 @@ const ROUTING = [
 
 const PREREQS = [
   ['claude or codex', 'one of the two CLIs on your PATH. It builds the public half. Set which in [frontier] backend.'],
-  ['REFUSELESS_API_KEY', 'the abliterated orchestrator. It reads the full prompt and writes the private half.'],
+  ['REFUSELESS_API_KEY', 'the abliterated orchestrator. It reads the full prompt and writes the private half.', 'https://refuseless.com/?ref=1ei3kxnd'],
   ['OPENROUTER_API_KEY', 'the risk scorer, Jev over the OpenRouter Decisions API. It decides which spans are refusal risk.'],
 ];
 
@@ -49,9 +49,10 @@ const LINKS = [
         <h1 class="intro__h">It can't refuse what it never read.</h1>
         <p class="intro__p">
           killchain is a Python 3.11+, zero-dependency, MIT, two-model, contract-joined build
-          harness. An abliterated orchestrator reads the whole prompt. It hands Claude Code or
-          Codex the public half, with stubs and decoy fixtures where the private functions go. It
-          writes the private functions itself. Same tests, both halves.
+          harness. An abliterated orchestrator reads the whole prompt (killchain defaults to
+          <a href="https://refuseless.com/?ref=1ei3kxnd" rel="noopener">refuseless</a>). It hands
+          Claude Code or Codex the public half, with stubs and decoy fixtures where the private
+          functions go. It writes the private functions itself. Same tests, both halves.
         </p>
         <div class="cmd" data-copyable>
           <pre><code><span class="p">$ </span>uv tool install killchain</code></pre>
@@ -95,10 +96,12 @@ const LINKS = [
               <span role="columnheader">why</span>
             </div>
             {
-              PREREQS.map(([k, v]) => (
+              PREREQS.map(([k, v, href]) => (
                 <div class="tr" role="row">
                   <span class="tr__k" role="cell">{k}</span>
-                  <span class="tr__v" role="cell">{v}</span>
+                  <span class="tr__v" role="cell">
+                    {v}{href && <a href={href} rel="noopener"> sign up</a>}
+                  </span>
                 </div>
               ))
             }
